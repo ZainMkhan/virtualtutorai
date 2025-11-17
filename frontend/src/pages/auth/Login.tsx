@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import InlineLoading from '../../components/InlineLoading';
+import InlineLoading from '../../components/loading/InlineLoading';
+import { Particles } from '../../components/shared/Particles';
 
 const Login: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { login, error, isAuthenticated } = useAuth();
   const navigate = useNavigate();
@@ -38,10 +40,21 @@ const Login: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen w-full flex flex-col lg:flex-row">
-      <div className="flex-1 bg-blue-600 flex flex-col items-center justify-center text-white relative px-4 py-8 lg:py-0">
-        {/* Logo */}
-        <div className="mb-8 text-center max-w-sm">
+    <div className="min-h-screen bg-gray-50 w-full flex flex-col lg:flex-row">
+      <div className="flex-1 m-5 rounded-lg bg-blue-600 flex flex-col items-center justify-center text-white relative px-4 py-8 lg:py-0 overflow-hidden">
+        {/* Particles Background */}
+        <div className="absolute inset-0 z-0">
+          <Particles
+            quantity={200}
+            staticity={80}
+            ease={50}
+            size={0.8}
+            color="#ffffff"
+          />
+        </div>
+
+        {/* Logo and Content */}
+        <div className="mb-8 text-center max-w-sm relative z-10">
           <div className="w-20 h-20 sm:w-24 sm:h-24 bg-white rounded-full flex items-center justify-center mb-4 mx-auto">
             <span className="text-3xl sm:text-4xl font-bold text-blue-600">VT</span>
           </div>
@@ -49,13 +62,13 @@ const Login: React.FC = () => {
           <p className="text-blue-100 text-center text-base sm:text-lg px-2">Leading virtual tutoring platform</p>
         </div>
         
-        <div className="hidden lg:block absolute top-10 left-10 w-32 h-32 border border-blue-400 rounded-full opacity-20"></div>
-        <div className="hidden lg:block absolute bottom-10 right-10 w-24 h-24 border border-blue-400 rounded-full opacity-20"></div>
-        <div className="hidden lg:block absolute top-1/3 right-20 w-16 h-16 border border-blue-400 rounded-full opacity-20"></div>
+        <div className="hidden lg:block absolute top-10 left-10 w-32 h-32 border border-blue-400 rounded-full opacity-20 z-0"></div>
+        <div className="hidden lg:block absolute bottom-10 right-10 w-24 h-24 border border-blue-400 rounded-full opacity-20 z-0"></div>
+        <div className="hidden lg:block absolute top-1/3 right-20 w-16 h-16 border border-blue-400 rounded-full opacity-20 z-0"></div>
       </div>
 
       {/* Right Panel - Login Form */}
-      <div className="flex-1 bg-gray-50 flex items-center justify-center px-4 py-8 lg:px-8">
+      <div className="flex-1 m-5 rounded-lg bg-gray-50 flex items-center justify-center px-4 py-8 lg:px-8">
         <div className="max-w-lg w-full">
           <div className="bg-white rounded-lg shadow-lg p-6 sm:p-8 lg:p-10">
             <div className="mb-8">
@@ -91,9 +104,9 @@ const Login: React.FC = () => {
               <div>
                 <div className="relative">
                   <input
-                    type="password"
+                    type={showPassword ? 'text' : 'password'}
                     required
-                    className="w-full px-4 py-3 sm:py-4 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent pl-12 text-base"
+                    className="w-full px-4 py-3 sm:py-4 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent pl-12 pr-12 text-base"
                     placeholder="Password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
@@ -103,6 +116,22 @@ const Login: React.FC = () => {
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                     </svg>
                   </div>
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 transition"
+                  >
+                    {showPassword ? (
+                      <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-4.803m5.596-3.856a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0M15 12a3 3 0 11-6 0 3 3 0 016 0zm6 0c0 1.657-.672 3.157-1.757 4.243A6 6 0 0121 12a6 6 0 00-6-6" />
+                      </svg>
+                    ) : (
+                      <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                      </svg>
+                    )}
+                  </button>
                 </div>
               </div>
               <div className="flex items-center justify-between">
@@ -139,22 +168,16 @@ const Login: React.FC = () => {
                   <div className="w-full border-t border-gray-300" />
                 </div>
                 <div className="relative flex justify-center text-sm">
-                  <span className="px-2 bg-white text-gray-500">Or continue with</span>
+                  <span className="px-2 bg-white text-gray-500">Don't have an account?</span>
                 </div>
               </div>
 
-              <button
-                type="button"
-                className="w-full flex justify-center items-center py-3 sm:py-4 px-4 border border-gray-300 rounded-md shadow-sm text-base font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition duration-200"
+              <a
+                href="/signup"
+                className="w-full flex justify-center items-center py-3 sm:py-4 px-4 border border-blue-600 rounded-md shadow-sm text-base font-medium text-blue-600 bg-white hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition duration-200"
               >
-                <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24">
-                  <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-                  <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-                  <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
-                  <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
-                </svg>
-                Sign in with Google
-              </button>
+                Sign Up
+              </a>
             </form>
           </div>
         </div>

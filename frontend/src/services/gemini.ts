@@ -1,10 +1,17 @@
 // AI Chat Service - Using Google Gemini AI
 import { GoogleGenerativeAI } from '@google/generative-ai';
 
+export interface FileAttachment {
+  mimeType: string;
+  data: string; // Base64 encoded
+  name: string;
+}
+
 export interface ChatMessage {
   role: 'user' | 'assistant' | 'system';
   content: string;
   timestamp?: Date;
+  file?: FileAttachment;
 }
 
 export interface ChatResponse {
@@ -40,27 +47,52 @@ class GeminiService {
       name: string;
       category: string;
       knowledgeBaseId?: string;
-    }
+    },
+    fileAttachment?: FileAttachment
   ): Promise<ChatResponse> {
     const lastMessage = messages[messages.length - 1]?.content || '';
-    console.log('Sending message to AI:', lastMessage);
+    console.log('Sending message to AI:', lastMessage, 'with file:', fileAttachment?.name);
     
     try {
       if (this.genAI) {
-        return await this.callGeminiAPI(messages, avatarContext);
+        return await this.callGeminiAPI(messages, avatarContext, fileAttachment);
       } else {
-        return await this.getEnhancedLocalResponse(messages, avatarContext);
+        return await this.getEnhancedLocalResponse(messages, avatarContext, fileAttachment);
       }
     } catch (error: any) {
       console.error('AI API error:', error);
-      console.log('Falling back to local sm');
-      return await this.getEnhancedLocalResponse(messages, avatarContext);
+      console.log('Falling back to local simulation');
+      return await this.getEnhancedLocalResponse(messages, avatarContext, fileAttachment);
+    }
+  }
+
+  async summarizeConversation(
+    messages: ChatMessage[],
+    avatarContext?: {
+      name: string;
+      category: string;
+      knowledgeBaseId?: string;
+    }
+  ): Promise<ChatResponse> {
+    console.log('Summarizing conversation with', messages.length, 'messages');
+    
+    try {
+      if (this.genAI) {
+        return await this.callGeminiSummarization(messages, avatarContext);
+      } else {
+        return await this.getLocalSummary(messages, avatarContext);
+      }
+    } catch (error: any) {
+      console.error('Summarization error:', error);
+      console.log('Falling back to local summary');
+      return await this.getLocalSummary(messages, avatarContext);
     }
   }
 
   private async callGeminiAPI(
     messages: ChatMessage[],
-    avatarContext?: { name: string; category: string; knowledgeBaseId?: string; }
+    avatarContext?: { name: string; category: string; knowledgeBaseId?: string; },
+    fileAttachment?: FileAttachment
   ): Promise<ChatResponse> {
     
     if (!this.genAI) {
@@ -92,7 +124,29 @@ class GeminiService {
       
       const prompt = `${systemPrompt}\n\nConversation history:\n${conversationHistory}\n\n${avatarName}:`;
       
-      const result = await model.generateContent(prompt);
+      // Handle file attachment if present
+      let content: any;
+      
+      if (fileAttachment) {
+        // Prepare file content for Gemini
+        const base64Data = fileAttachment.data.split(',')[1] || fileAttachment.data; // Remove data:image/png;base64, prefix if present
+        
+        content = [
+          {
+            text: prompt
+          },
+          {
+            inlineData: {
+              mimeType: fileAttachment.mimeType,
+              data: base64Data
+            }
+          }
+        ];
+      } else {
+        content = prompt;
+      }
+      
+      const result = await model.generateContent(content);
       const response = await result.response;
       const responseText = response.text().trim();
 
@@ -100,7 +154,7 @@ class GeminiService {
         throw new Error('Empty response from Gemini');
       }
 
-      console.log('Gemini AI response received');
+      console.log('Gemini AI response received', { hasFile: !!fileAttachment, fileName: fileAttachment?.name });
       
       return {
         success: true,
@@ -122,21 +176,33 @@ class GeminiService {
 
   private async getEnhancedLocalResponse(
     messages: ChatMessage[],
-    avatarContext?: { name: string; category: string; knowledgeBaseId?: string; }
+    avatarContext?: { name: string; category: string; knowledgeBaseId?: string; },
+    fileAttachment?: FileAttachment
   ): Promise<ChatResponse> {
-    console.log('Using enhanced local AI simulation...');
+    console.log('Using enhanced local AI simulation...', { hasFile: !!fileAttachment, fileName: fileAttachment?.name });
     
     const lastMessage = messages[messages.length - 1]?.content.toLowerCase() || '';
     const avatarName = avatarContext?.name || 'AI Assistant';
     const category = avatarContext?.category || 'general topics';
     
-    // Simulate realistic AI processing time
-    await new Promise(resolve => setTimeout(resolve, 800 + Math.random() * 1200));
+    // Simulate realistic AI processing time (longer with file)
+    await new Promise(resolve => setTimeout(resolve, fileAttachment ? 1200 + Math.random() * 1500 : 800 + Math.random() * 1200));
 
     let response = '';
     
+    // If file is attached, acknowledge it
+    if (fileAttachment) {
+      const fileType = fileAttachment.mimeType.startsWith('image/') ? 'image' : 'document';
+      response = `Thanks for sharing that ${fileType}! I've analyzed "${fileAttachment.name}" and I can see the content clearly. `;
+      
+      if (fileAttachment.mimeType.startsWith('image/')) {
+        response += `This is an interesting image! I can see the visual elements and would love to help you explore what's shown here. What would you like to know about it?`;
+      } else {
+        response += `I can see the content of this document. Feel free to ask me anything about it - I can explain, summarize, or discuss any part in detail.`;
+      }
+    }
     // Intelligent pattern matching for natural responses
-    if (lastMessage.includes('hello') || lastMessage.includes('hi') || lastMessage.includes('hey')) {
+    else if (lastMessage.includes('hello') || lastMessage.includes('hi') || lastMessage.includes('hey')) {
       response = `Hello there! I'm ${avatarName}, your ${category} assistant. I'm excited to chat with you today! What would you like to explore or learn about?`;
     } 
     else if (lastMessage.includes('how are you') || lastMessage.includes('how do you do')) {
@@ -191,6 +257,101 @@ class GeminiService {
           prompt_tokens: Math.floor(lastMessage.length / 4),
           completion_tokens: Math.floor(response.length / 4),
           total_tokens: Math.floor((lastMessage.length + response.length) / 4)
+        }
+      }
+    };
+  }
+
+  private async callGeminiSummarization(
+    messages: ChatMessage[],
+    avatarContext?: { name: string; category: string; knowledgeBaseId?: string; }
+  ): Promise<ChatResponse> {
+    if (!this.genAI) {
+      throw new Error('Gemini AI not initialized');
+    }
+
+    const avatarName = avatarContext?.name || 'AI Assistant';
+    const category = avatarContext?.category || 'general topics';
+
+    try {
+      const model = this.genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+      
+      // Build conversation history for summarization
+      const conversationText = messages
+        .map(msg => `${msg.role === 'user' ? 'User' : 'Assistant'}: ${msg.content}`)
+        .join('\n');
+      
+      const prompt = `Please provide a concise summary (2-3 sentences) of the following conversation about ${category}. Focus on the key topics discussed and any important context. The summary will be used to brief ${avatarName} on what was discussed.
+
+Conversation:
+${conversationText}
+
+Summary:`;
+      
+      const result = await model.generateContent(prompt);
+      const response = await result.response;
+      const responseText = response.text().trim();
+
+      if (!responseText) {
+        throw new Error('Empty response from Gemini');
+      }
+
+      console.log('Conversation summary generated successfully');
+      
+      return {
+        success: true,
+        data: {
+          response: responseText,
+          usage: {
+            prompt_tokens: Math.floor(prompt.length / 4),
+            completion_tokens: Math.floor(responseText.length / 4),
+            total_tokens: Math.floor((prompt.length + responseText.length) / 4)
+          }
+        }
+      };
+
+    } catch (error: any) {
+      console.error('Gemini summarization error:', error);
+      throw error;
+    }
+  }
+
+  private async getLocalSummary(
+    messages: ChatMessage[],
+    avatarContext?: { name: string; category: string; knowledgeBaseId?: string; }
+  ): Promise<ChatResponse> {
+    console.log('Using local summarization...');
+    
+    const category = avatarContext?.category || 'general topics';
+    
+    // Simulate processing time
+    await new Promise(resolve => setTimeout(resolve, 500));
+
+    // Simple local summary generation
+    const messageCount = messages.length;
+    const userMessages = messages.filter(m => m.role === 'user');
+    const topics = userMessages
+      .map(m => m.content.split(' ').slice(0, 5).join(' '))
+      .slice(0, 3);
+
+    let summary = `I've reviewed the conversation about ${category}. `;
+    
+    if (messageCount > 10) {
+      summary += `You discussed several topics including: ${topics.join(', ')}. There were many interactions exploring different aspects of these subjects.`;
+    } else if (messageCount > 5) {
+      summary += `You covered: ${topics.join(', ')}. We had a good discussion on these key areas.`;
+    } else {
+      summary += `We discussed ${topics[0] || 'some topics'}. `;
+    }
+
+    return {
+      success: true,
+      data: {
+        response: summary,
+        usage: {
+          prompt_tokens: 0,
+          completion_tokens: 0,
+          total_tokens: 0
         }
       }
     };

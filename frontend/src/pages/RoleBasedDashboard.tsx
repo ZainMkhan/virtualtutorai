@@ -1,8 +1,8 @@
 import React from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import Dashboard from './user/Dashboard';
-import AdminDashboard from './admin/AdminDashboard';
-import Loading from '../components/Loading';
+import AdminDashboard from './admin/AdminDashboard/index';
+import Loading from '../components/loading/Loading';
 
 const RoleBasedDashboard: React.FC = () => {
   const { user, loading } = useAuth();

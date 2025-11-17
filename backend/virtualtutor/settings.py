@@ -53,6 +53,10 @@ INSTALLED_APPS = [
     # Local apps
     'users',  # Our custom users app
     'avatars',  # Avatar management app
+    'conversations',  # Conversation and message management app
+    'subscriptions',  # Subscription and tier management app
+    'payments',  # Payment processing and invoicing app
+    'analytics',  # Analytics and admin dashboard app
 ]
 
 MIDDLEWARE = [
@@ -218,6 +222,11 @@ SWAGGER_SETTINGS = {
 REDOC_SETTINGS = {
     'LAZY_RENDERING': False,
 }
+
+# Stripe Configuration
+STRIPE_API_KEY = os.getenv('STRIPE_API_KEY', '')
+STRIPE_PUBLISHABLE_KEY = os.getenv('STRIPE_PUBLISHABLE_KEY', '')
+STRIPE_WEBHOOK_SECRET = os.getenv('STRIPE_WEBHOOK_SECRET', '')
 
 # URL Display Configuration
 def display_server_urls():

@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Bot, Loader2 } from 'lucide-react';
 import { avatarAPI, type Avatar } from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
-import Logo from '../../components/Logo';
+import Logo from '../../components/shared/Logo';
 import UserMenu from '../../components/user/UserMenu';
 import ModeToggle from './components/ModeToggle';
 import AvatarMode from './components/AvatarMode';

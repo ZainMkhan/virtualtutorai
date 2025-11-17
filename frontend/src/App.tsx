@@ -1,18 +1,23 @@
 import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
-import PrivateRoute from './components/PrivateRoute';
+import StripeProvider from './components/payment/StripeProvider';
+import PrivateRoute from './components/shared/PrivateRoute';
 import AdminRoute from './components/admin/AdminRoute';
-import Loading from './components/Loading';
+import Loading from './components/loading/Loading';
+import Landing from './pages/Landing';
 import Login from './pages/auth/Login';
+import Signup from './pages/auth/signup/Signup';
 import RoleBasedDashboard from './pages/RoleBasedDashboard';
 import Profile from './pages/user/Profile';
 import Settings from './pages/user/Settings';
-import AdminUserEdit from './pages/admin/AdminUserEdit';
-import AdminUserCreate from './pages/admin/AdminUserCreate';
-import AdminAvatarCreate from './pages/admin/AdminAvatarCreate';
-import AdminAvatarEdit from './pages/admin/AdminAvatarEdit';
+import Subscription from './pages/user/Subscription';
+import AdminUserEdit from './pages/admin/AdminUserEdit/AdminUserEdit';
+import AdminUserCreate from './pages/admin/AdminUserCreate/AdminUserCreate';
+import AdminAvatarCreate from './pages/admin/AdminAvatarCreate/AdminAvatarCreate';
+import AdminAvatarEdit from './pages/admin/AdminAvatarEdit/AdminAvatarEdit';
 import AvatarInteraction from './pages/avatar/AvatarInteraction';
+import Conversation from './pages/Conversation';
 import './App.css';
 
 const AppRoutes: React.FC = () => {
@@ -29,10 +34,11 @@ const AppRoutes: React.FC = () => {
         element={
           isAuthenticated ? 
             <Navigate to="/dashboard" replace /> : 
-            <Navigate to="/login" replace />
+            <Landing />
         } 
       />
       <Route path="/login" element={<Login />} />
+      <Route path="/signup" element={<Signup />} />
       <Route 
         path="/dashboard" 
         element={
@@ -54,6 +60,14 @@ const AppRoutes: React.FC = () => {
         element={
           <PrivateRoute isAuthenticated={isAuthenticated}>
             <Settings />
+          </PrivateRoute>
+        } 
+      />
+      <Route 
+        path="/subscription" 
+        element={
+          <PrivateRoute isAuthenticated={isAuthenticated}>
+            <Subscription />
           </PrivateRoute>
         } 
       />
@@ -97,6 +111,22 @@ const AppRoutes: React.FC = () => {
           </PrivateRoute>
         } 
       />
+      <Route 
+        path="/conversation" 
+        element={
+          <PrivateRoute isAuthenticated={isAuthenticated}>
+            <Conversation />
+          </PrivateRoute>
+        } 
+      />
+      <Route 
+        path="/conversation/:conversationId" 
+        element={
+          <PrivateRoute isAuthenticated={isAuthenticated}>
+            <Conversation />
+          </PrivateRoute>
+        } 
+      />
       {/* Redirect any unknown routes to login */}
       <Route path="*" element={<Navigate to="/login" replace />} />
     </Routes>
@@ -117,9 +147,11 @@ function App() {
   return (
     <AuthProvider>
       <Router>
-        <div className="min-h-screen custom-scrollbar">
-          <AppRoutes />
-        </div>
+        <StripeProvider>
+          <div className="min-h-screen custom-scrollbar">
+            <AppRoutes />
+          </div>
+        </StripeProvider>
       </Router>
     </AuthProvider>
   );

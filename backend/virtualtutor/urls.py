@@ -40,6 +40,36 @@ def api_root(request):
             '4_update_avatar': '/api/avatars/{id}/update/',
             '5_delete_avatar': '/api/avatars/{id}/delete/',
         },
+        'conversation_apis': {
+            '1_list_conversations': '/api/conversations/',
+            '2_create_conversation': '/api/conversations/',
+            '3_get_conversation': '/api/conversations/{id}/',
+            '4_add_message': '/api/conversations/{id}/messages/',
+            '5_archive_conversation': '/api/conversations/{id}/',
+        },
+        'subscription_apis': {
+            '1_list_tiers': '/api/subscriptions/tiers/',
+            '2_current_subscription': '/api/subscriptions/current/',
+            '3_usage_statistics': '/api/subscriptions/usage/',
+            '4_upgrade_tier': '/api/subscriptions/upgrade/',
+            '5_cancel_subscription': '/api/subscriptions/cancel/',
+        },
+        'payment_apis': {
+            '1_create_payment_intent': '/api/payments/create-intent/',
+            '2_list_payments': '/api/payments/list/',
+            '3_list_invoices': '/api/invoices/',
+            '4_stripe_webhook': '/api/webhooks/stripe/',
+        },
+        'admin_analytics_apis': {
+            '1_user_statistics': '/api/admin/analytics/users/stats/',
+            '2_conversation_analytics': '/api/admin/analytics/conversations/stats/',
+            '3_revenue_analytics': '/api/admin/analytics/revenue/',
+            '4_system_health': '/api/admin/analytics/system-health/',
+            '5_event_logs': '/api/admin/analytics/events/',
+            '6_daily_metrics': '/api/admin/analytics/daily-metrics/',
+            '7_hourly_metrics': '/api/admin/analytics/hourly-metrics/',
+            '8_user_statistics_list': '/api/admin/analytics/user-statistics/',
+        },
         'documentation': {
             'swagger': '/swagger/',
         }
@@ -49,6 +79,11 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/', include('users.urls')),
     path('api/avatars/', include('avatars.urls')),
+    path('api/conversations/', include('conversations.urls')),
+    path('api/subscriptions/', include('subscriptions.urls')),
+    path('api/payments/', include('payments.urls')),
+    path('api/admin/analytics/', include('analytics.urls')),
+    path('api/activity/', include('analytics.activity_urls')),
     path('', api_root, name='api_root'),
     
     # Simple Swagger UI

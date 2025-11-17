@@ -1,7 +1,7 @@
 import React from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import Loading from '../Loading';
+import Loading from '../loading/Loading';
 
 interface AdminRouteProps {
   children: React.ReactNode;
