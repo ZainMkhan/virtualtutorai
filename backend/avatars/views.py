@@ -14,6 +14,7 @@ from .serializers import (
     AvatarUpdateSerializer,
     AvatarListSerializer
 )
+from analytics.activity_utils import log_admin_action
 
 
 class AvatarPagination(PageNumberPagination):
@@ -64,6 +65,20 @@ class AvatarCreateAPIView(APIView):
         if serializer.is_valid():
             avatar = serializer.save(user_id=request.user)
             read_serializer = AvatarReadSerializer(avatar)
+            
+            # Log avatar creation
+            try:
+                log_admin_action(
+                    request=request,
+                    action='avatar_uploaded',
+                    resource_type='avatar',
+                    resource_id=str(avatar.id),
+                    description=f'Admin created avatar: {avatar.name}',
+                    metadata={'category': avatar.category, 'quality': avatar.quality}
+                )
+            except:
+                pass
+            
             return Response({
                 'success': True,
                 'message': 'Avatar created successfully',
@@ -197,6 +212,20 @@ class AvatarUpdateAPIView(APIView):
             if serializer.is_valid():
                 serializer.save()
                 read_serializer = AvatarReadSerializer(avatar)
+                
+                # Log avatar update
+                try:
+                    log_admin_action(
+                        request=request,
+                        action='avatar_updated',
+                        resource_type='avatar',
+                        resource_id=str(avatar.id),
+                        description=f'Admin updated avatar: {avatar.name}',
+                        metadata={'updated_fields': list(serializer.validated_data.keys())}
+                    )
+                except:
+                    pass
+                
                 return Response({
                     'success': True,
                     'message': 'Avatar updated successfully',
@@ -242,6 +271,19 @@ class AvatarDeleteAPIView(APIView):
                 }, status=status.HTTP_403_FORBIDDEN)
                 
             avatar = get_object_or_404(Avatar, pk=pk)
+            
+            # Log avatar deletion
+            try:
+                log_admin_action(
+                    request=request,
+                    action='avatar_deleted',
+                    resource_type='avatar',
+                    resource_id=str(avatar.id),
+                    description=f'Admin deleted avatar: {avatar.name}',
+                    metadata={'category': avatar.category}
+                )
+            except:
+                pass
             
             avatar.delete()
             return Response({

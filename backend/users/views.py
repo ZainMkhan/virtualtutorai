@@ -9,6 +9,12 @@ from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
 
 from .models import User
+from analytics.activity_utils import (
+    log_login,
+    log_user_activity,
+    log_profile_updated,
+    log_admin_action,
+)
 from .serializers import (
     LoginSerializer,
     UserProfileReadSerializer,
@@ -57,6 +63,22 @@ class LoginAPIView(APIView):
     def post(self, request):
         serializer = LoginSerializer(data=request.data)
         if serializer.is_valid():
+            # Log successful login
+            try:
+                user = serializer.validated_data.get('user')
+                if user:
+                    log_user_activity(
+                        request=request,
+                        action='login',
+                        resource_type='user',
+                        resource_id=str(user.id),
+                        description="User login successful",
+                        user=user
+                    )
+            except Exception as e:
+                print(f"Error logging login: {e}")
+                pass
+            
             return Response({
                 'success': True,
                 'message': 'Login successful',
@@ -140,6 +162,22 @@ class UserCreateAPIView(APIView):
         if serializer.is_valid():
             user = serializer.save()
             read_serializer = UserProfileReadSerializer(user)
+            
+            # Log user registration
+            try:
+                from analytics.activity_models import ActivityLog
+                ActivityLog.objects.create(
+                    user=user,
+                    action='user_registered',
+                    resource_type='user',
+                    resource_id=str(user.id),
+                    description=f'User {user.email} registered',
+                    ip_address=request.META.get('REMOTE_ADDR'),
+                    user_agent=request.META.get('HTTP_USER_AGENT'),
+                )
+            except:
+                pass
+            
             return Response({
                 'success': True,
                 'message': 'User created successfully',
@@ -373,6 +411,17 @@ class UserUpdateAPIView(APIView):
             if serializer.is_valid():
                 serializer.save()
                 read_serializer = UserProfileReadSerializer(user)
+                
+                # Log profile update
+                try:
+                    log_profile_updated(
+                        request,
+                        changes=list(serializer.validated_data.keys()),
+                        description="User profile updated"
+                    )
+                except:
+                    pass
+                
                 return Response({
                     'success': True,
                     'message': 'User updated successfully',
@@ -486,6 +535,18 @@ class UserDeleteAPIView(APIView):
                 if action == 'soft_delete':
                     user_to_modify.soft_delete()
                     message = 'User soft deleted successfully'
+                    # Log admin action
+                    try:
+                        log_admin_action(
+                            request=request,
+                            action='user_deleted',
+                            resource_type='user',
+                            target_user=user_to_modify,
+                            description=f'Admin deleted user {user_to_modify.email}',
+                            metadata={'reason': reason}
+                        )
+                    except:
+                        pass
                     
                 elif action == 'change_status':
                     old_status = user_to_modify.status
@@ -494,6 +555,18 @@ class UserDeleteAPIView(APIView):
                     message = f'User status changed from {old_status} to {new_status}'
                     response_data['old_status'] = old_status
                     response_data['new_status'] = new_status
+                    # Log admin action
+                    try:
+                        log_admin_action(
+                            request=request,
+                            action='user_suspended' if new_status == 'suspended' else 'user_status_changed',
+                            resource_type='user',
+                            target_user=user_to_modify,
+                            description=f'Admin changed {user_to_modify.email} status to {new_status}',
+                            metadata={'old_status': old_status, 'new_status': new_status, 'reason': reason}
+                        )
+                    except:
+                        pass
                     
                 elif action == 'restore':
                     if not user_to_modify.is_deleted:
@@ -504,6 +577,17 @@ class UserDeleteAPIView(APIView):
                     
                     user_to_modify.restore()
                     message = 'User restored successfully'
+                    # Log admin action
+                    try:
+                        log_admin_action(
+                            request=request,
+                            action='user_restored',
+                            resource_type='user',
+                            target_user=user_to_modify,
+                            description=f'Admin restored user {user_to_modify.email}'
+                        )
+                    except:
+                        pass
                 
                 return Response({
                     'success': True,

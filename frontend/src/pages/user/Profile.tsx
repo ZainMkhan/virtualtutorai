@@ -4,7 +4,8 @@ import { useNavigate } from 'react-router-dom';
 import { userAPI, type UpdateUserRequest, type UserProfile } from '../../services/api';
 import { Avatar, AvatarFallback } from '../../components/ui/avatar';
 import UserMenu from '../../components/user/UserMenu';
-import Logo from '../../components/Logo';
+import Logo from '../../components/shared/Logo';
+import { ArrowLeft } from 'lucide-react';
 
 const Profile: React.FC = () => {
   const { user } = useAuth();
@@ -157,6 +158,15 @@ const Profile: React.FC = () => {
       {/* Profile Content */}
       <main className="w-full py-8 px-4 sm:px-6 lg:px-8">
         <div className="max-w-4xl mx-auto">
+          {/* Back Button */}
+          <button
+            onClick={() => navigate('/dashboard')}
+            className="flex items-center gap-2 text-blue-600 hover:text-blue-700 font-medium mb-6 transition-colors"
+          >
+            <ArrowLeft className="h-5 w-5" />
+            Back to Dashboard
+          </button>
+
           {/* Header */}
           <div className="bg-white rounded-lg shadow p-6 mb-8">
             <div className="flex items-center space-x-6">
