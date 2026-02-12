@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { userAPI, avatarAPI, type UserProfile, type Avatar, type DeleteUserRequest } from '../../../services/api';
 import AdminSubscriptionTiers from '../AdminSubscriptionTiers';
 import AdminUserSubscriptions from '../AdminUserSubscriptions';
@@ -15,6 +16,7 @@ import {
 const AdminDashboard: React.FC = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const { t } = useTranslation();
   
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [avatars, setAvatars] = useState<Avatar[]>([]);

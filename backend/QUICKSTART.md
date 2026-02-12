@@ -28,7 +28,7 @@ venv\Scripts\activate
 pip install -r requirements.txt
 copy .env.example .env
 python manage.py migrate
-python manage.py createsuperuser
+python manage.py seed_database
 python manage.py runserver
 ```
 
@@ -47,7 +47,7 @@ source venv/bin/activate
 pip install -r requirements.txt
 cp .env.example .env
 python manage.py migrate
-python manage.py createsuperuser
+python manage.py seed_database
 python manage.py runserver
 ```
 
@@ -64,6 +64,11 @@ DB_PASSWORD=postgres
 DB_HOST=localhost
 DB_PORT=5432
 USE_SQLITE=False
+
+# Stripe Configuration (optional for development, required for payments)
+STRIPE_API_KEY=sk_test_your_key_here
+STRIPE_PUBLISHABLE_KEY=pk_test_your_key_here
+STRIPE_WEBHOOK_SECRET=whsec_your_secret_here
 ```
 
 ### Test Database Connection
@@ -87,9 +92,18 @@ After starting the server with `python manage.py runserver`:
 - **Swagger Documentation**: http://127.0.0.1:8000/swagger/
 - **Admin Panel**: http://127.0.0.1:8000/admin/
 
+## Database Seeding
+
+The `seed_database` command automatically creates:
+- **4 Subscription Tiers**: Free, Basic, Pro, Enterprise with tiered usage limits
+- **Admin User**: admin@virtualtutror.ai / admin123456
+- **Regular User**: user@example.com / user123456
+
 ## Default Admin Login
 
-Use the credentials you created during `createsuperuser` command to login to the admin panel.
+After running `seed_database`, use these credentials to login to the admin panel:
+- **Email**: admin@virtualtutror.ai
+- **Password**: admin123456
 
 ## API Testing
 

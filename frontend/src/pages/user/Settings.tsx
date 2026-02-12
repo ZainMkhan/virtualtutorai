@@ -1,14 +1,17 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
+import { useTranslation } from 'react-i18next';
 import { subscriptionAPI } from '../../services/api';
 import Logo from '../../components/shared/Logo';
+import LanguageSwitcher from '../../components/shared/LanguageSwitcher';
 import UserMenu from '../../components/user/UserMenu';
 import { AlertCircle, Check, ArrowLeft } from 'lucide-react';
 
 const Settings: React.FC = () => {
   const { user, currentSubscription, refreshSubscription } = useAuth();
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const [cancelLoading, setCancelLoading] = useState(false);
   const [cancelSuccess, setCancelSuccess] = useState(false);
   const [cancelError, setCancelError] = useState<string | null>(null);
@@ -51,11 +54,12 @@ const Settings: React.FC = () => {
               <Logo size="md" showText={true} textColor="text-gray-900" />
             </div>
             <div className="flex items-center space-x-4">
+              <LanguageSwitcher />
               <button
                 onClick={() => navigate('/dashboard')}
                 className="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium"
               >
-                Dashboard
+                {t('navigation.dashboard')}
               </button>
               <UserMenu />
             </div>
@@ -72,25 +76,25 @@ const Settings: React.FC = () => {
             className="flex items-center gap-2 text-blue-600 hover:text-blue-700 font-medium mb-6 transition-colors"
           >
             <ArrowLeft className="h-5 w-5" />
-            Back to Dashboard
+            {t('pages.settings.back_to_dashboard')}
           </button>
 
           <div className="bg-white rounded-lg shadow">
             <div className="px-6 py-4 border-b border-gray-200">
-              <h1 className="text-2xl font-bold text-gray-900">Settings</h1>
-              <p className="text-gray-600 mt-1">Manage your application preferences and settings</p>
+              <h1 className="text-2xl font-bold text-gray-900">{t('user.settings')}</h1>
+              <p className="text-gray-600 mt-1">{t('user.manage_preferences')}</p>
             </div>
 
             <div className="p-6">
               <div className="space-y-6">
                 {/* Account Section */}
                 <div>
-                  <h2 className="text-lg font-medium text-gray-900 mb-4">Account Information</h2>
+                  <h2 className="text-lg font-medium text-gray-900 mb-4">{t('user.account_information')}</h2>
                   <div className="bg-gray-50 p-4 rounded-md">
                     <div className="space-y-2">
-                      <p><span className="font-medium">Email:</span> {user?.email}</p>
-                      <p><span className="font-medium">Role:</span> <span className="capitalize">{user?.role}</span></p>
-                      <p><span className="font-medium">User ID:</span> {user?.user_id}</p>
+                      <p><span className="font-medium">{t('user.email')}:</span> {user?.email}</p>
+                      <p><span className="font-medium">{t('user.role')}:</span> <span className="capitalize">{user?.role}</span></p>
+                      <p><span className="font-medium">{t('user.user_id')}:</span> {user?.user_id}</p>
                     </div>
                   </div>
                 </div>
@@ -125,33 +129,33 @@ const Settings: React.FC = () => {
 
                 {/* Security Section */}
                 <div>
-                  <h2 className="text-lg font-medium text-gray-900 mb-4">Security</h2>
+                  <h2 className="text-lg font-medium text-gray-900 mb-4">{t('user.change_password')}</h2>
                   <div className="space-y-4">
                     <button className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium">
-                      Change Password
+                      {t('user.change_password')}
                     </button>
                     <div className="text-sm text-gray-500">
-                      <p>Last password change: Never</p>
+                      <p>{t('user.last_password_change')}</p>
                     </div>
                   </div>
                 </div>
 
                 {/* Subscription Management Section */}
                 <div>
-                  <h2 className="text-lg font-medium text-gray-900 mb-4">Subscription Management</h2>
+                  <h2 className="text-lg font-medium text-gray-900 mb-4">{t('user.subscription_management')}</h2>
                   <div className="space-y-4">
                     {/* Current Plan */}
                     <div className="bg-blue-50 border border-blue-200 p-4 rounded-md">
                       <div className="flex items-start justify-between">
                         <div>
-                          <h3 className="text-sm font-medium text-blue-900">Current Plan</h3>
+                          <h3 className="text-sm font-medium text-blue-900">{t('user.current_plan')}</h3>
                           <p className="text-sm text-blue-700 mt-1 capitalize font-semibold">
                             {currentSubscription?.tierName || 'Free'}
                           </p>
                           <p className="text-xs text-blue-600 mt-2">
                             {currentSubscription?.tierName && currentSubscription?.tierName !== 'Free'
                               ? 'Your subscription is active and renews automatically'
-                              : 'You are on the free plan'}
+                              : t('user.you_are_on_free_plan')}
                           </p>
                         </div>
                       </div>
@@ -237,7 +241,7 @@ const Settings: React.FC = () => {
                     {(!currentSubscription?.tierName || currentSubscription?.tierName === 'Free') && (
                       <div className="pt-4 border-t border-gray-200">
                         <p className="text-sm text-gray-600">
-                          You don't have an active subscription. <button onClick={() => navigate('/subscription')} className="text-blue-600 hover:text-blue-700 font-medium">Browse plans</button>
+                          {t('user.no_active_subscription')} <button onClick={() => navigate('/subscription')} className="text-blue-600 hover:text-blue-700 font-medium">{t('user.browse_plans')}</button>
                         </p>
                       </div>
                     )}
@@ -246,14 +250,14 @@ const Settings: React.FC = () => {
 
                 {/* Danger Zone */}
                 <div className="border-t pt-6">
-                  <h2 className="text-lg font-medium text-red-600 mb-4">Danger Zone</h2>
+                  <h2 className="text-lg font-medium text-red-600 mb-4">{t('user.danger_zone')}</h2>
                   <div className="bg-red-50 border border-red-200 p-4 rounded-md">
-                    <h3 className="text-sm font-medium text-red-800 mb-2">Delete Account</h3>
+                    <h3 className="text-sm font-medium text-red-800 mb-2">{t('user.delete_account')}</h3>
                     <p className="text-sm text-red-600 mb-4">
-                      Once you delete your account, there is no going back. Please be certain.
+                      {t('user.delete_account_warning')}
                     </p>
                     <button className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md text-sm font-medium">
-                      Delete Account
+                      {t('user.delete_account')}
                     </button>
                   </div>
                 </div>

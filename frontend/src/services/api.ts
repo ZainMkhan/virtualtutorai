@@ -482,6 +482,13 @@ export const subscriptionAPI = {
     const response = await apiClient.post<SubscriptionResponse>('/subscriptions/cancel/', {});
     return response.data;
   },
+
+  updateInteractiveMinutes: async (minutes: number): Promise<any> => {
+    const response = await apiClient.post<any>('/subscriptions/usage/update-interactive-minutes/', {
+      minutes,
+    });
+    return response.data;
+  },
 };
 
 export const paymentAPI = {
@@ -723,6 +730,7 @@ export interface UsageSummary {
 
 // User Subscriptions List for Admin
 export interface UserSubscriptionTier {
+  subscription_id?: string;
   tier_name: string;
   tier_id: string;
   status: 'active' | 'past_due' | 'canceled' | 'incomplete';
@@ -737,16 +745,17 @@ export interface UserSubscriptionTier {
 export interface UserUsageData {
   messages_sent: number;
   messages_limit: number;
-  messages_remaining: number;
-  conversations_used: number;
+  messages_remaining?: number;
+  conversations_active?: number;
+  conversations_used?: number;
   conversations_limit: number;
-  conversations_remaining: number;
+  conversations_remaining?: number;
   interactive_minutes_used: number;
   interactive_minutes_limit: number;
-  interactive_minutes_remaining: number;
-  video_minutes_used: number;
-  video_minutes_limit: number;
-  video_minutes_remaining: number;
+  interactive_minutes_remaining?: number;
+  video_minutes_used?: number;
+  video_minutes_limit?: number;
+  video_minutes_remaining?: number;
 }
 
 export interface AdminUserSubscription {

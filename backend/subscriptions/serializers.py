@@ -11,6 +11,7 @@ class SubscriptionTierSerializer(serializers.ModelSerializer):
         model = SubscriptionTier
         fields = [
             'id',
+            'tier',
             'name',
             'display_name',
             'description',
@@ -42,6 +43,7 @@ class SubscriptionTierAdminSerializer(serializers.ModelSerializer):
         model = SubscriptionTier
         fields = [
             'id',
+            'tier',
             'name',
             'display_name',
             'description',
@@ -66,34 +68,18 @@ class SubscriptionTierAdminSerializer(serializers.ModelSerializer):
 class UsageLimitSerializer(serializers.ModelSerializer):
     """Serializer for displaying user's usage statistics"""
     
-    conversations_limit = serializers.SerializerMethodField()
-    video_minutes_limit = serializers.SerializerMethodField()
     messages_limit = serializers.SerializerMethodField()
     interactive_minutes_limit = serializers.SerializerMethodField()
     
-    conversations_remaining = serializers.SerializerMethodField()
-    video_minutes_remaining = serializers.SerializerMethodField()
     messages_remaining = serializers.SerializerMethodField()
     interactive_minutes_remaining = serializers.SerializerMethodField()
     
-    conversations_percentage = serializers.SerializerMethodField()
-    video_minutes_percentage = serializers.SerializerMethodField()
     messages_percentage = serializers.SerializerMethodField()
     interactive_minutes_percentage = serializers.SerializerMethodField()
     
     class Meta:
         model = UsageLimit
         fields = [
-            # Conversations
-            'conversations_used',
-            'conversations_limit',
-            'conversations_remaining',
-            'conversations_percentage',
-            # Video Minutes
-            'video_minutes_used',
-            'video_minutes_limit',
-            'video_minutes_remaining',
-            'video_minutes_percentage',
             # Messages
             'messages_sent',
             'messages_limit',
@@ -109,28 +95,6 @@ class UsageLimitSerializer(serializers.ModelSerializer):
             'period_end',
         ]
         read_only_fields = fields
-    
-    # ============ CONVERSATIONS ============
-    def get_conversations_limit(self, obj):
-        return obj.conversations_limit
-    
-    def get_conversations_remaining(self, obj):
-        return obj.conversations_remaining
-    
-    def get_conversations_percentage(self, obj):
-        return round(obj.conversations_percentage, 1)
-    
-    # ============ VIDEO MINUTES ============
-    def get_video_minutes_limit(self, obj):
-        return obj.video_minutes_limit
-    
-    def get_video_minutes_remaining(self, obj):
-        remaining = obj.video_minutes_remaining
-        return None if remaining == float('inf') else remaining
-    
-    def get_video_minutes_percentage(self, obj):
-        percentage = obj.video_minutes_percentage
-        return None if percentage == 0 and obj.video_minutes_limit == 0 else round(percentage, 1)
     
     # ============ MESSAGES ============
     def get_messages_limit(self, obj):
@@ -193,7 +157,6 @@ class SubscriptionCreateSerializer(serializers.Serializer):
     """Serializer for creating/upgrading subscriptions"""
     
     tier_id = serializers.UUIDField(required=True, help_text="Target subscription tier ID")
-    discount_code = serializers.CharField(required=False, allow_blank=True, help_text="Optional discount code")
     
     def validate_tier_id(self, value):
         from .models import SubscriptionTier
@@ -202,14 +165,3 @@ class SubscriptionCreateSerializer(serializers.Serializer):
         except SubscriptionTier.DoesNotExist:
             raise serializers.ValidationError("Invalid or inactive subscription tier")
         return value
-    
-    def validate_discount_code(self, value):
-        if value:
-            from payments.models import Discount
-            try:
-                discount = Discount.objects.get(code=value.upper())
-                if not discount.is_valid:
-                    raise serializers.ValidationError("Discount code is not valid or has expired")
-            except Discount.DoesNotExist:
-                raise serializers.ValidationError("Discount code not found")
-        return value.upper() if value else None

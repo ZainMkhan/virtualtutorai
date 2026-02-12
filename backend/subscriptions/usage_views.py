@@ -162,8 +162,14 @@ class UsageViewSet(viewsets.ViewSet):
         
         elif action == 'create_conversation' or action == 'new_conversation':
             if usage_limit.conversations_limit > 0:
-                if usage_limit.conversations_used + quantity > usage_limit.conversations_limit:
-                    remaining = usage_limit.conversations_remaining
+                # Count active conversations for this user
+                from conversations.models import Conversation
+                user_conversations = Conversation.objects.filter(
+                    user=usage_limit.subscription.user,
+                    is_active=True
+                ).count()
+                if user_conversations + quantity > usage_limit.conversations_limit:
+                    remaining = usage_limit.conversations_limit - user_conversations
                     return False, (
                         f"Not enough conversations. "
                         f"You have {remaining} conversations remaining, "
@@ -327,8 +333,6 @@ class UsageViewSet(viewsets.ViewSet):
             old_usage = {
                 'messages_sent': usage_limit.messages_sent,
                 'interactive_minutes_used': usage_limit.interactive_minutes_used,
-                'conversations_used': usage_limit.conversations_used,
-                'video_minutes_used': usage_limit.video_minutes_used,
             }
             
             usage_limit.reset_usage()

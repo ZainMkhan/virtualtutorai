@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import InlineLoading from '../../components/loading/InlineLoading';
+import LanguageSwitcher from '../../components/shared/LanguageSwitcher';
 import { Particles } from '../../components/shared/Particles';
 
 const Login: React.FC = () => {
@@ -11,6 +13,7 @@ const Login: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { login, error, isAuthenticated } = useAuth();
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   // Redirect if already authenticated
   useEffect(() => {
@@ -23,7 +26,7 @@ const Login: React.FC = () => {
     e.preventDefault();
     
     if (!email || !password) {
-      alert('Please enter both email and password');
+      alert(t('pages.login.enter_credentials'));
       return;
     }
 
@@ -71,9 +74,12 @@ const Login: React.FC = () => {
       <div className="flex-1 m-5 rounded-lg bg-gray-50 flex items-center justify-center px-4 py-8 lg:px-8">
         <div className="max-w-lg w-full">
           <div className="bg-white rounded-lg shadow-lg p-6 sm:p-8 lg:p-10">
-            <div className="mb-8">
-              <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">Hello Again!</h2>
-              <p className="text-gray-600 text-base sm:text-lg">Welcome Back</p>
+            <div className="flex justify-between items-start mb-8">
+              <div>
+                <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">{t('pages.login.title')}</h2>
+                <p className="text-gray-600 text-base sm:text-lg">{t('pages.login.subtitle')}</p>
+              </div>
+              <LanguageSwitcher />
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-6">
@@ -89,7 +95,7 @@ const Login: React.FC = () => {
                     type="email"
                     required
                     className="w-full px-4 py-3 sm:py-4 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent pl-12 text-base"
-                    placeholder="Email Address"
+                    placeholder={t('pages.login.email_placeholder')}
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                   />
@@ -107,7 +113,7 @@ const Login: React.FC = () => {
                     type={showPassword ? 'text' : 'password'}
                     required
                     className="w-full px-4 py-3 sm:py-4 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent pl-12 pr-12 text-base"
-                    placeholder="Password"
+                    placeholder={t('pages.login.password_placeholder')}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                   />
@@ -143,12 +149,12 @@ const Login: React.FC = () => {
                     className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                   />
                   <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-700">
-                    Remember me
+                    {t('pages.login.remember_me')}
                   </label>
                 </div>
                 <div className="text-sm">
                   <a href="#" className="font-medium text-blue-600 hover:text-blue-500">
-                    Forgot Password?
+                    {t('pages.login.forgot_password')}
                   </a>
                 </div>
               </div>
@@ -158,9 +164,9 @@ const Login: React.FC = () => {
                 className="w-full flex justify-center py-3 sm:py-4 px-4 border border-transparent rounded-md shadow-sm text-base font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition duration-200"
               >
                 {isSubmitting ? (
-                  <InlineLoading text="Signing in..." />
+                  <InlineLoading text={t('pages.login.signing_in')} />
                 ) : (
-                  'Sign in'
+                  t('pages.login.sign_in')
                 )}
               </button>
               <div className="relative">

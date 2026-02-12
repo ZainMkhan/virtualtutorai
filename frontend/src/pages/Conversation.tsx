@@ -1,9 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useConversation } from '@/hooks/useConversation';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSpeechRecognition } from '@/hooks/useSpeechRecognition';
 import { geminiService } from '@/services/gemini';
+import { canSendMessage, canCreateConversation, canUseInteractiveAvatar, formatLimitWarning } from '@/utils/limitChecker';
+import { LimitWarningBanner } from '@/components/shared/LimitWarnings';
 import { type UploadedFile } from '@/components/shared/FileUpload';
 import InstructorSelector from '@/components/conversation/InstructorSelector';
 import ConversationHeader from '@/components/conversation/ConversationHeader';
@@ -14,7 +17,8 @@ import MessageInput from '@/components/conversation/MessageInput';
 const ConversationPage: React.FC = () => {
   const { conversationId } = useParams<{ conversationId?: string }>();
   const navigate = useNavigate();
-  const { user, currentSubscription } = useAuth();
+  const { t } = useTranslation();
+  const { user, currentSubscription, usageData, refreshUsageData } = useAuth();
   const { conversation, messages, error, createConversation, loadConversation, sendMessage, clearError } = useConversation();
 
   const [inputValue, setInputValue] = useState('');
@@ -84,7 +88,7 @@ const ConversationPage: React.FC = () => {
           setShowInstructorSelector(true);
         }
       } catch (err: any) {
-        setLocalError(err.message || 'Failed to initialize conversation');
+        setLocalError(err.message || t('conversation.failed_to_initialize_conversation'));
       }
     };
 
@@ -96,6 +100,25 @@ const ConversationPage: React.FC = () => {
 
     if (!inputValue.trim() && !attachedFile) {
       return;
+    }
+
+    // Check message limit before sending
+    if (usageData) {
+      const messageCheckResult = canSendMessage(
+        usageData.messages_sent,
+        usageData.messages_limit
+      );
+
+      if (!messageCheckResult.canProceed) {
+        setLocalError(formatLimitWarning(messageCheckResult));
+        return;
+      }
+
+      // Warn if close to limit but allow
+      if (messageCheckResult.percentageUsed >= 70) {
+        const warning = formatLimitWarning(messageCheckResult);
+        console.warn('⚠️ Usage Warning:', warning);
+      }
     }
 
     let userMessage = inputValue.trim();
@@ -111,6 +134,20 @@ const ConversationPage: React.FC = () => {
 
       // If no conversation exists yet, create one on first message
       if (!currentConversation) {
+        // Check conversation limit before creating
+        if (usageData) {
+          const conversationCheckResult = canCreateConversation(
+            usageData.conversations_used || 0,
+            usageData.conversations_limit || 0
+          );
+
+          if (!conversationCheckResult.canProceed) {
+            setLocalError(formatLimitWarning(conversationCheckResult));
+            setIsSending(false);
+            return;
+          }
+        }
+
         const newConversationId = await createConversation();
         navigate(`/conversation/${newConversationId}`, { replace: true });
         return;
@@ -155,13 +192,14 @@ const ConversationPage: React.FC = () => {
         }
       } catch (geminiError) {
         console.error('Gemini API error:', geminiError);
-        setLocalError('Failed to get AI response. Please try again.');
+        setLocalError(t('conversation.failed_to_get_ai_response'));
       }
       
-      // Refresh conversation list to show updated conversation
+      // Refresh usage data and conversation list
+      refreshUsageData();
       setConversationListRefresh(prev => prev + 1);
     } catch (err: any) {
-      setLocalError(err.message || 'Failed to send message');
+      setLocalError(err.message || t('conversation.failed_to_send_message'));
     } finally {
       setIsSending(false);
     }
@@ -178,7 +216,7 @@ const ConversationPage: React.FC = () => {
       const newConversationId = await createConversation(avatarId || undefined);
       navigate(`/conversation/${newConversationId}`, { replace: true });
     } catch (err: any) {
-      setLocalError(err.message || 'Failed to create new conversation');
+      setLocalError(err.message || t('conversation.failed_to_create_conversation'));
     } finally {
       setIsCreatingConversation(false);
     }
@@ -211,7 +249,7 @@ const ConversationPage: React.FC = () => {
       <div className="flex-1 flex flex-col">
         {/* Header */}
         <ConversationHeader
-          conversationTitle={conversation?.title || 'New Conversation'}
+          conversationTitle={conversation?.title || t('conversation.new_conversation')}
           onBack={() => navigate('/dashboard')}
           onNewChat={handleNewConversation}
           conversation={conversation}
@@ -220,6 +258,18 @@ const ConversationPage: React.FC = () => {
 
         {/* Messages Area - Takes up remaining space */}
         <div className="flex-1 flex flex-col overflow-hidden">
+          {/* Limit Warning Banner */}
+          {usageData && (
+            <LimitWarningBanner
+              messagesSent={usageData.messages_sent}
+              messagesLimit={usageData.messages_limit}
+              conversationsUsed={usageData.conversations_used || 0}
+              conversationsLimit={usageData.conversations_limit || 0}
+              interactiveMinutesUsed={usageData.interactive_minutes_used}
+              interactiveMinutesLimit={usageData.interactive_minutes_limit}
+            />
+          )}
+
           <MessagesArea
             messages={messages}
             isSending={isSending}

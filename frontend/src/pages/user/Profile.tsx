@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { userAPI, type UpdateUserRequest, type UserProfile } from '../../services/api';
 import { Avatar, AvatarFallback } from '../../components/ui/avatar';
 import UserMenu from '../../components/user/UserMenu';
@@ -10,6 +11,7 @@ import { ArrowLeft } from 'lucide-react';
 const Profile: React.FC = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { t } = useTranslation();
   
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
@@ -210,7 +212,7 @@ const Profile: React.FC = () => {
           {/* Profile Form */}
           <div className="bg-white rounded-lg shadow">
             <div className="px-6 py-4 border-b border-gray-200">
-              <h2 className="text-xl font-semibold text-gray-900">Edit Profile</h2>
+              <h2 className="text-xl font-semibold text-gray-900">{t('user.edit_profile')}</h2>
             </div>
 
             <form onSubmit={handleSubmit} className="p-6 space-y-6">
@@ -230,7 +232,7 @@ const Profile: React.FC = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <label htmlFor="first_name" className="block text-sm font-medium text-gray-700 mb-2">
-                    First Name
+                    {t('user.first_name')}
                   </label>
                   <input
                     type="text"
@@ -245,7 +247,7 @@ const Profile: React.FC = () => {
 
                 <div>
                   <label htmlFor="last_name" className="block text-sm font-medium text-gray-700 mb-2">
-                    Last Name
+                    {t('user.last_name')}
                   </label>
                   <input
                     type="text"
@@ -263,7 +265,7 @@ const Profile: React.FC = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
-                    Email Address
+                    {t('user.email_address')}
                   </label>
                   <input
                     type="email"
@@ -278,7 +280,7 @@ const Profile: React.FC = () => {
 
                 <div>
                   <label htmlFor="dob" className="block text-sm font-medium text-gray-700 mb-2">
-                    Date of Birth
+                    {t('user.date_of_birth')}
                   </label>
                   <input
                     type="date"
@@ -294,7 +296,7 @@ const Profile: React.FC = () => {
               {/* Bio */}
               <div>
                 <label htmlFor="bio" className="block text-sm font-medium text-gray-700 mb-2">
-                  Bio
+                  {t('user.bio')}
                 </label>
                 <textarea
                   id="bio"
@@ -303,14 +305,14 @@ const Profile: React.FC = () => {
                   value={formData.bio}
                   onChange={handleInputChange}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="Tell us about yourself..."
+                  placeholder={t('pages.profile.bio_placeholder')}
                 />
               </div>
 
               {/* Interests */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Interests
+                  {t('user.interests')}
                 </label>
                 
                 {/* Current Interests */}
@@ -340,14 +342,14 @@ const Profile: React.FC = () => {
                     onChange={(e) => setNewInterest(e.target.value)}
                     onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddInterest())}
                     className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="Add an interest..."
+                    placeholder={t('user.add_an_interest')}
                   />
                   <button
                     type="button"
                     onClick={handleAddInterest}
                     className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    Add
+                    >
+                    {t('user.add')}
                   </button>
                 </div>
               </div>
@@ -359,7 +361,7 @@ const Profile: React.FC = () => {
                   disabled={saving}
                   className="px-6 py-3 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {saving ? 'Saving...' : 'Save Changes'}
+                  {saving ? t('pages.profile.saving') : t('user.save_changes')}
                 </button>
               </div>
             </form>

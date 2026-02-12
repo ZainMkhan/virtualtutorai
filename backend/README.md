@@ -67,7 +67,7 @@ copy .env.example .env  # Windows
 
 # 5. Setup database and run
 python manage.py migrate
-python manage.py createsuperuser
+python manage.py seed_database
 python manage.py runserver
 ```
 
@@ -106,7 +106,7 @@ chmod +x setup.sh
 3. ✅ Create `.env` file from template
 4. ✅ Ask you to choose database type (SQLite or PostgreSQL)
 5. ✅ Run database migrations
-6. ✅ Create admin user account
+6. ✅ Seed database with admin user, regular user, and subscription tiers
 7. ✅ Provide next steps instructions
 
 ### **Important Notes:**
@@ -210,6 +210,12 @@ CORS_ALLOW_ALL_ORIGINS=False
 - Replace `your-super-secret-key-here` with a real secret key
 - Replace `your_postgres_password` with your PostgreSQL password
 - Set `USE_SQLITE=True` if you want to use SQLite for development instead of PostgreSQL
+- **Stripe Keys** (optional for development, required for payments):
+  - Get `STRIPE_API_KEY` from https://dashboard.stripe.com/apikeys
+  - Get `STRIPE_PUBLISHABLE_KEY` from https://dashboard.stripe.com/apikeys
+  - Get `STRIPE_WEBHOOK_SECRET` from https://dashboard.stripe.com/webhooks (after creating webhook endpoint)
+  - Use `sk_test_*` and `pk_test_*` keys for development
+  - Use `sk_live_*` and `pk_live_*` keys for production
 
 ### Step 3: Generate a Secret Key
 
@@ -262,6 +268,9 @@ DB_PASSWORD=postgres
 DB_HOST=localhost
 DB_PORT=5432
 USE_SQLITE=False
+STRIPE_API_KEY=sk_test_your_key_here
+STRIPE_PUBLISHABLE_KEY=pk_test_your_key_here
+STRIPE_WEBHOOK_SECRET=whsec_your_secret_here
 ```
 
 **Useful Docker Commands:**
@@ -334,6 +343,39 @@ USE_SQLITE=True
 
 2. That's it! Django will automatically create an SQLite database file.
 
+### Option C: Stripe Configuration (Payment Processing)
+
+The application integrates with Stripe for payment processing. To enable payments:
+
+**Step 1: Create a Stripe Account**
+- Visit [Stripe.com](https://stripe.com)
+- Sign up for a free account
+
+**Step 2: Get Your API Keys**
+- Go to [API Keys Dashboard](https://dashboard.stripe.com/apikeys)
+- You'll see "Publishable key" and "Secret key"
+- For development, use the keys with `test_` prefix
+- For production, use the keys with `live_` prefix (keep these secret!)
+
+**Step 3: Get Your Webhook Secret**
+- Go to [Webhooks Dashboard](https://dashboard.stripe.com/webhooks)
+- Click "Add endpoint" and set the URL to: `https://your-domain.com/api/webhooks/stripe/`
+- Select events: `payment_intent.succeeded`, `payment_intent.payment_failed`, `invoice.paid`, `invoice.payment_failed`
+- Copy the "Signing secret" shown in the webhook details
+
+**Step 4: Update .env File**
+```env
+STRIPE_API_KEY=sk_test_YOUR_SECRET_KEY_HERE
+STRIPE_PUBLISHABLE_KEY=pk_test_YOUR_PUBLISHABLE_KEY_HERE
+STRIPE_WEBHOOK_SECRET=whsec_YOUR_WEBHOOK_SECRET_HERE
+```
+
+**Important:**
+- ⚠️ **NEVER** commit your Stripe keys to version control
+- For development testing, use `sk_test_*` and `pk_test_*` keys
+- Stripe provides test card numbers like `4242 4242 4242 4242` for testing
+- Switch to live keys only when deploying to production
+
 ## 🚀 Running the Application
 
 ### Step 1: Apply Database Migrations
@@ -344,16 +386,19 @@ python manage.py makemigrations
 python manage.py migrate
 ```
 
-### Step 2: Create a Superuser
+### Step 2: Seed Database
 
 ```bash
-python manage.py createsuperuser
+python manage.py seed_database
 ```
 
-You'll be prompted to enter:
-- Email address (this will be your admin login)
-- Username 
-- Password
+This command automatically creates:
+- **4 Subscription Tiers**: Free, Basic, Pro, Enterprise with different usage limits
+- **Admin User**: admin@virtualtutror.ai / admin123456
+- **Regular User**: user@example.com / user123456
+- **Usage Limits**: For each user based on their tier
+
+All users start with a free tier subscription.
 
 ### Step 3: Run the Development Server
 
@@ -435,6 +480,96 @@ Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9...
 | POST | `/api/avatars/create/` | Create avatar | Yes (Admin) |
 | PUT | `/api/avatars/{id}/update/` | Update avatar | Yes (Admin) |
 | DELETE | `/api/avatars/{id}/delete/` | Delete avatar | Yes (Admin) |
+| GET | `/api/subscriptions/tiers/` | List subscription tiers | Yes |
+| GET | `/api/subscriptions/current/` | Get current subscription | Yes |
+| GET | `/api/subscriptions/usage/` | Get usage statistics | Yes |
+| POST | `/api/subscriptions/usage/update-interactive-minutes/` | Update interactive minutes | Yes |
+| POST | `/api/subscriptions/upgrade/` | Upgrade/downgrade subscription | Yes |
+| POST | `/api/subscriptions/cancel/` | Cancel subscription | Yes |
+
+### Subscription API Examples
+
+#### Get Current Subscription
+```http
+GET /api/subscriptions/current/
+Authorization: Bearer <access_token>
+```
+
+Response:
+```json
+{
+    "success": true,
+    "message": "Subscription retrieved successfully",
+    "data": {
+        "id": "uuid",
+        "tier": {
+            "id": "uuid",
+            "tier": "free",
+            "name": "free",
+            "display_name": "Free"
+        },
+        "status": "active",
+        "current_period_start": "2025-01-01T00:00:00Z",
+        "current_period_end": "2025-02-01T00:00:00Z"
+    }
+}
+```
+
+#### Get Usage Statistics
+```http
+GET /api/subscriptions/usage/
+Authorization: Bearer <access_token>
+```
+
+Response:
+```json
+{
+    "success": true,
+    "message": "Usage statistics retrieved successfully",
+    "tier": {
+        "id": "uuid",
+        "tier": "free",
+        "name": "free",
+        "display_name": "Free"
+    },
+    "data": {
+        "messages_sent": 10,
+        "messages_limit": 50,
+        "messages_remaining": 40,
+        "messages_percentage": 20.0,
+        "interactive_minutes_used": 5,
+        "interactive_minutes_limit": 10,
+        "interactive_minutes_remaining": 5,
+        "interactive_minutes_percentage": 50.0
+    }
+}
+```
+
+#### Update Interactive Minutes
+```http
+POST /api/subscriptions/usage/update-interactive-minutes/
+Authorization: Bearer <access_token>
+Content-Type: application/json
+
+{
+    "minutes": 10
+}
+```
+
+Response:
+```json
+{
+    "success": true,
+    "message": "Interactive minutes updated successfully",
+    "data": {
+        "minutes_added": 10,
+        "total_used": 15,
+        "limit": 60,
+        "remaining": 45,
+        "percentage_used": 25.0
+    }
+}
+```
 
 ### Complete API Documentation
 

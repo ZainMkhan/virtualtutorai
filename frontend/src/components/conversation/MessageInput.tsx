@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Paperclip, Mic, Send, Loader } from 'lucide-react';
@@ -40,6 +41,7 @@ const MessageInput: React.FC<MessageInputProps> = ({
   interimTranscript,
   disabled = false,
 }) => {
+  const { t } = useTranslation();
   return (
     <div className="fixed bottom-6 right-0 left-64 flex justify-center px-6">
       <div className="w-full max-w-2xl">
@@ -55,7 +57,7 @@ const MessageInput: React.FC<MessageInputProps> = ({
           <div className="flex gap-3 items-center">
             <Input
               type="text"
-              placeholder="Ask me anything..."
+              placeholder={t('conversation.ask_me_anything')}
               value={inputValue + (isListening ? interimTranscript : '')}
               onChange={(e) => onInputChange(e.target.value)}
               disabled={disabled || isSending}
@@ -70,7 +72,7 @@ const MessageInput: React.FC<MessageInputProps> = ({
                 variant="ghost"
                 size="sm"
                 className="text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-full p-2 h-auto"
-                title="Attach file or image"
+                title={t('conversation.attach_file')}
               >
                 <Paperclip className="h-5 w-5" />
               </Button>

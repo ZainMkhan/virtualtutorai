@@ -1,5 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import Logo from '../../../components/shared/Logo';
 import UserMenu from '../../../components/user/UserMenu';
 import { PageHeader } from './components/PageHeader';
@@ -10,6 +11,7 @@ import { useAvatarForm } from './hook/useAvatarForm';
 
 const AdminAvatarCreate: React.FC = () => {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const {
     formData,
     loading,

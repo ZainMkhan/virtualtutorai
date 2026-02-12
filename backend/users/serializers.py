@@ -61,6 +61,7 @@ class LoginSerializer(serializers.Serializer):
 class UserProfileReadSerializer(serializers.ModelSerializer):
     full_name = serializers.SerializerMethodField()
     is_admin = serializers.SerializerMethodField()
+    subscription_tier = serializers.SerializerMethodField()
 
     class Meta:
         model = User
@@ -75,6 +76,7 @@ class UserProfileReadSerializer(serializers.ModelSerializer):
             'role',
             'status',
             'is_admin',
+            'subscription_tier',
             'date_joined',
             'additional_information'
         ]
@@ -84,6 +86,20 @@ class UserProfileReadSerializer(serializers.ModelSerializer):
 
     def get_is_admin(self, obj):
         return obj.role == obj.Role.ADMIN
+    
+    def get_subscription_tier(self, obj):
+        """Get current subscription tier for user"""
+        try:
+            if hasattr(obj, 'subscription') and obj.subscription:
+                return {
+                    'id': str(obj.subscription.tier.id),
+                    'tier': obj.subscription.tier.tier,
+                    'name': obj.subscription.tier.name,
+                    'display_name': obj.subscription.tier.display_name,
+                }
+        except:
+            pass
+        return None
 
 
 class UserCreateSerializer(serializers.ModelSerializer):
@@ -174,3 +190,4 @@ class UserDeleteSerializer(serializers.Serializer):
             raise serializers.ValidationError('Status is required when action is change_status.')
         
         return attrs
+

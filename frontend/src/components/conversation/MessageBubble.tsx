@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import type { Message } from '@/services/api';
 import { AlertCircle } from 'lucide-react';
 
@@ -17,8 +18,9 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
   userName,
   userImage,
 }) => {
+  const { t } = useTranslation();
   const isUser = message.role === 'user';
-  const displayName = isUser ? (userName || 'You') : (instructorName || 'Instructor');
+  const displayName = isUser ? (userName || t('conversation.you')) : (instructorName || t('conversation.instructor'));
   const displayUserImage = isUser ? userImage : instructorImage;
   const avatarInitial = displayName.charAt(0).toUpperCase();
   const avatarBgColor = isUser
@@ -87,7 +89,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
           {displayImage && imageError && (
             <div className="mb-3 bg-red-100 border border-red-300 rounded-lg p-3 flex items-center gap-2">
               <AlertCircle className="h-4 w-4 text-red-600 flex-shrink-0" />
-              <span className="text-sm text-red-700">Failed to load image</span>
+              <span className="text-sm text-red-700">{t('conversation.failed_to_load_image')}</span>
             </div>
           )}
 

@@ -1,5 +1,6 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/contexts/AuthContext';
 import { avatarAPI } from '@/services/api';
 import Logo from '../shared/Logo';
@@ -34,6 +35,7 @@ interface DashboardSidebarProps {
 }
 
 const DashboardSidebarContent: React.FC<{ onNavigate?: () => void }> = ({ onNavigate }) => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
   const { setOpen, state, toggleSidebar } = useSidebar();
@@ -69,19 +71,19 @@ const DashboardSidebarContent: React.FC<{ onNavigate?: () => void }> = ({ onNavi
   const mainNavItems = [
     {
       icon: Home,
-      label: 'Dashboard',
+      label: t('navigation.dashboard'),
       path: '/dashboard',
       badge: null,
     },
     {
       icon: Bot,
-      label: 'Browse Avatars',
+      label: t('navigation.browse_avatars_short'),
       path: '/avatars',
       badge: avatarCount?.toString() || null,
     },
     {
       icon: MessageCircle,
-      label: 'Start new chat',
+      label: t('navigation.start_new_chat'),
       path: '/conversation',
       badge: null,
     },
@@ -92,19 +94,19 @@ const DashboardSidebarContent: React.FC<{ onNavigate?: () => void }> = ({ onNavi
   const accountItems = [
     {
       icon: User,
-      label: 'View Profile',
+      label: t('navigation.view_profile'),
       path: '/profile',
       badge: null,
     },
     {
       icon: CreditCard,
-      label: 'Subscription',
+      label: t('navigation.subscription'),
       path: '/subscription',
       badge: null,
     },
     {
       icon: Settings,
-      label: 'Settings',
+      label: t('navigation.settings'),
       path: '/settings',
       badge: null,
     },
@@ -146,9 +148,9 @@ const DashboardSidebarContent: React.FC<{ onNavigate?: () => void }> = ({ onNavi
   };
 
   return (
-    <Sidebar className="border-r bg-white border-gray-200 h-full" collapsible="icon">
+    <Sidebar className="border-r bg-white border-gray-200 h-full !bg-white" collapsible="icon">
       {/* Header */}
-      <SidebarHeader className="border-b border-gray-200 p-4">
+      <SidebarHeader className="border-b border-gray-200 p-4 bg-white">
         <div className="flex items-center justify-between gap-2 w-full">
           {/* Logo - Always visible */}
           <div className="flex-shrink-0">
@@ -166,7 +168,7 @@ const DashboardSidebarContent: React.FC<{ onNavigate?: () => void }> = ({ onNavi
           <button
             onClick={() => toggleSidebar()}
             className="hidden lg:flex h-8 w-8 items-center justify-center text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-md transition-colors flex-shrink-0"
-            title={state === 'expanded' ? 'Collapse sidebar' : 'Expand sidebar'}
+            title={state === 'expanded' ? t('navigation.collapse_sidebar') : t('navigation.expand_sidebar')}
             aria-label="Toggle sidebar"
           >
             {state === 'expanded' ? (
@@ -179,10 +181,10 @@ const DashboardSidebarContent: React.FC<{ onNavigate?: () => void }> = ({ onNavi
       </SidebarHeader>
 
       {/* Content */}
-      <SidebarContent className="px-0">
+      <SidebarContent className="px-0 bg-white">
         {/* Main Navigation */}
         <SidebarGroup>
-          <SidebarGroupLabel className="px-4">Navigation</SidebarGroupLabel>
+          <SidebarGroupLabel className="px-4">{t('navigation.navigation_label')}</SidebarGroupLabel>
           <SidebarMenu>
             {filteredMainItems.map((item) => (
               <SidebarMenuItem key={item.path}>
@@ -194,7 +196,7 @@ const DashboardSidebarContent: React.FC<{ onNavigate?: () => void }> = ({ onNavi
 
         {/* Account Section */}
         <SidebarGroup>
-          <SidebarGroupLabel className="px-4">Account</SidebarGroupLabel>
+          <SidebarGroupLabel className="px-4">{t('navigation.account_label')}</SidebarGroupLabel>
           <SidebarMenu>
             {filteredAccountItems.map((item) => (
               <SidebarMenuItem key={item.path}>
@@ -206,7 +208,7 @@ const DashboardSidebarContent: React.FC<{ onNavigate?: () => void }> = ({ onNavi
       </SidebarContent>
 
       {/* Footer - Usage Indicator */}
-      <SidebarFooter className="mt-auto border-t border-gray-200 p-0">
+      <SidebarFooter className="mt-auto border-t border-gray-200 p-0 bg-white">
         <UsageIndicator 
           usage={usageData || undefined}
           tierName={currentSubscription?.tierName}

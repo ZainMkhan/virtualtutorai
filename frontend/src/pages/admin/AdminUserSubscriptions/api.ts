@@ -44,9 +44,9 @@ export const exportUsersToCSV = (users: AdminUserSubscription[]): void => {
     user.subscription?.status || 'N/A',
     user.subscription?.days_until_renewal?.toString() || 'N/A',
     user.usage ? `${user.usage.messages_sent}/${user.usage.messages_limit}` : 'N/A',
-    user.usage ? `${user.usage.conversations_used}/${user.usage.conversations_limit}` : 'N/A',
+    user.usage ? `${user.usage.conversations_active ?? user.usage.conversations_used ?? 0}/${user.usage.conversations_limit}` : 'N/A',
     user.usage ? `${user.usage.interactive_minutes_used}/${user.usage.interactive_minutes_limit}` : 'N/A',
-    user.usage ? `${user.usage.video_minutes_used}/${user.usage.video_minutes_limit}` : 'N/A',
+    user.usage && user.usage.video_minutes_limit ? `${user.usage.video_minutes_used}/${user.usage.video_minutes_limit}` : 'N/A',
     user.date_joined,
   ]);
 

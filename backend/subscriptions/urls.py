@@ -21,6 +21,7 @@ urlpatterns = [
     path('current/', views.CurrentSubscriptionAPIView.as_view(), name='current-subscription'),
     path('upgrade/', views.SubscriptionUpgradeAPIView.as_view(), name='subscription-upgrade'),
     path('cancel/', views.SubscriptionCancelAPIView.as_view(), name='subscription-cancel'),
+    path('usage/update-interactive-minutes/', views.UpdateInteractiveMinutesAPIView.as_view(), name='update-interactive-minutes'),
     
     # Admin endpoints
     path('admin/users-subscriptions/', AdminAllUsersWithSubscriptionsAPIView.as_view(), name='admin-users-subscriptions'),

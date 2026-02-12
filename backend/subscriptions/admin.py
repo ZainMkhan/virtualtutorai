@@ -73,7 +73,7 @@ class SubscriptionAdmin(admin.ModelAdmin):
 
 @admin.register(UsageLimit)
 class UsageLimitAdmin(admin.ModelAdmin):
-    list_display = ('user_email', 'conversations_used', 'conversations_limit', 'video_minutes_used', 'video_minutes_limit', 'period_end')
+    list_display = ('user_email', 'messages_sent', 'messages_limit', 'period_end')
     list_filter = ('period_end',)
     search_fields = ('subscription__user__email',)
     readonly_fields = ('id', 'created_at', 'updated_at')
@@ -82,11 +82,11 @@ class UsageLimitAdmin(admin.ModelAdmin):
         ('Subscription', {
             'fields': ('subscription',)
         }),
-        ('Conversation Usage', {
-            'fields': ('conversations_used', 'conversations_remaining', 'conversations_percentage')
+        ('Messages Usage', {
+            'fields': ('messages_sent', 'messages_remaining', 'messages_percentage')
         }),
-        ('Video Minutes Usage', {
-            'fields': ('video_minutes_used', 'video_minutes_remaining', 'video_minutes_percentage')
+        ('Interactive Minutes Usage', {
+            'fields': ('interactive_minutes_used', 'interactive_minutes_remaining', 'interactive_minutes_percentage')
         }),
         ('Period', {
             'fields': ('period_start', 'period_end')
@@ -101,11 +101,6 @@ class UsageLimitAdmin(admin.ModelAdmin):
         return obj.subscription.user.email
     user_email.short_description = 'User'
     
-    def conversations_limit(self, obj):
-        return obj.subscription.tier.conversations_per_month
-    conversations_limit.short_description = 'Conversation Limit'
-    
-    def video_minutes_limit(self, obj):
-        limit = obj.subscription.tier.video_minutes_per_month
-        return 'Unlimited' if limit == 0 else limit
-    video_minutes_limit.short_description = 'Video Minutes Limit'
+    def messages_limit(self, obj):
+        return obj.subscription.tier.messages_per_month
+    messages_limit.short_description = 'Messages Limit'

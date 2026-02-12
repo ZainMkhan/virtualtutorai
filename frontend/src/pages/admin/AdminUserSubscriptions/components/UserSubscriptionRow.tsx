@@ -62,13 +62,13 @@ const UserSubscriptionRow: React.FC<UserSubscriptionRowProps> = ({ user }) => {
         {user.usage ? <UsageBar used={user.usage.messages_sent} limit={user.usage.messages_limit} /> : 'N/A'}
       </td>
       <td className="px-6 py-4 whitespace-nowrap">
-        {user.usage ? <UsageBar used={user.usage.conversations_used} limit={user.usage.conversations_limit} /> : 'N/A'}
+        {user.usage ? <UsageBar used={user.usage.conversations_active ?? user.usage.conversations_used ?? 0} limit={user.usage.conversations_limit} /> : 'N/A'}
       </td>
       <td className="px-6 py-4 whitespace-nowrap">
         {user.usage ? <UsageBar used={user.usage.interactive_minutes_used} limit={user.usage.interactive_minutes_limit} /> : 'N/A'}
       </td>
       <td className="px-6 py-4 whitespace-nowrap">
-        {user.usage ? <UsageBar used={user.usage.video_minutes_used} limit={user.usage.video_minutes_limit} /> : 'N/A'}
+        {user.usage && user.usage.video_minutes_limit ? <UsageBar used={user.usage.video_minutes_used ?? 0} limit={user.usage.video_minutes_limit} /> : <span className="text-sm text-gray-500">N/A</span>}
       </td>
     </tr>
   );
