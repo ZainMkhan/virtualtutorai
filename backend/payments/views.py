@@ -15,7 +15,7 @@ import json
 
 from users.models import User
 from subscriptions.models import SubscriptionTier, Subscription, UsageLimit
-from .models import Payment, Invoice, Discount, DiscountUsage
+from .models import Payment, Invoice
 from .serializers import (
     PaymentSerializer,
     InvoiceSerializer,
@@ -25,7 +25,6 @@ from analytics.activity_utils import (
     log_payment_initiated,
     log_payment_succeeded,
     log_payment_failed,
-    log_discount_applied,
     log_user_activity,
 )
 
@@ -49,7 +48,6 @@ class PaymentIntentCreateAPIView(APIView):
             required=['tier_id'],
             properties={
                 'tier_id': openapi.Schema(type=openapi.TYPE_STRING, format='uuid'),
-                'discount_code': openapi.Schema(type=openapi.TYPE_STRING),
             }
         ),
         manual_parameters=[
@@ -78,7 +76,6 @@ class PaymentIntentCreateAPIView(APIView):
             }, status=status.HTTP_400_BAD_REQUEST)
         
         tier_id = serializer.validated_data['tier_id']
-        discount_code = serializer.validated_data.get('discount_code')
         
         tier = get_object_or_404(SubscriptionTier, id=tier_id, is_active=True)
         
@@ -131,33 +128,6 @@ class PaymentIntentCreateAPIView(APIView):
             
             # Calculate amount
             amount = int(tier.price * 100)  # Convert to cents
-            discount = None
-            discount_amount = 0
-            
-            # Apply discount if provided
-            if discount_code:
-                discount = Discount.objects.get(code=discount_code)
-                
-                # Check if user can use this discount
-                if not discount.can_user_use(request.user):
-                    return Response({
-                        'success': False,
-                        'message': 'You cannot use this discount code'
-                    }, status=status.HTTP_400_BAD_REQUEST)
-                
-                # Calculate discount
-                _, discount_amount = discount.apply_discount(tier.price)
-                amount = int((tier.price - discount_amount) * 100)
-                
-                # Log discount application
-                try:
-                    log_discount_applied(
-                        request,
-                        discount,
-                        description=f'Discount code {discount_code} applied to {tier.display_name} subscription'
-                    )
-                except:
-                    pass
             
             # Create PaymentIntent
             intent = stripe.PaymentIntent.create(
@@ -167,7 +137,6 @@ class PaymentIntentCreateAPIView(APIView):
                 metadata={
                     'user_id': str(request.user.id),
                     'tier_id': str(tier.id),
-                    'discount_code': discount_code or '',
                 }
             )
             
@@ -175,10 +144,7 @@ class PaymentIntentCreateAPIView(APIView):
             payment = Payment.objects.create(
                 user=request.user,
                 stripe_payment_intent_id=intent.id,
-                original_amount=tier.price,
-                discount_amount=discount_amount,
-                final_amount=tier.price - discount_amount,
-                discount=discount if discount_code else None,
+                amount=tier.price,
                 status='pending',
             )
             
@@ -204,11 +170,7 @@ class PaymentIntentCreateAPIView(APIView):
                         'id': str(tier.id),
                         'name': tier.display_name,
                         'price': str(tier.price),
-                    },
-                    'discount': {
-                        'code': discount_code,
-                        'amount': str(discount_amount)
-                    } if discount_code else None
+                    }
                 }
             }, status=status.HTTP_201_CREATED)
             
@@ -379,30 +341,19 @@ class StripeWebhookAPIView(APIView):
                 payment=payment,
                 stripe_invoice_id=payment_intent['id'],
                 invoice_number=invoice_number,
-                original_amount=payment.original_amount,
-                discount_amount=payment.discount_amount,
-                total_amount=payment.final_amount,
+                amount=payment.amount,
                 issue_date=timezone.now().date(),
                 due_date=timezone.now().date(),
                 paid_at=timezone.now(),
                 status='paid'
             )
             
-            # Record discount usage if applicable
-            if payment.discount:
-                DiscountUsage.objects.get_or_create(
-                    discount=payment.discount,
-                    user=payment.user
-                )
-                payment.discount.current_uses += 1
-                payment.discount.save()
-            
             # Log payment success
             try:
                 log_payment_succeeded(
                     request=None,  # Webhook context, no request available
                     payment=payment,
-                    description=f'Payment of ${payment.final_amount} for {tier.display_name} subscription succeeded'
+                    description=f'Payment of ${payment.amount} for {tier.display_name} subscription succeeded'
                 )
             except:
                 pass
@@ -424,7 +375,7 @@ class StripeWebhookAPIView(APIView):
                     request=None,  # Webhook context, no request available
                     payment=payment,
                     error_msg=error_message,
-                    description=f'Payment of ${payment.final_amount} failed'
+                    description=f'Payment of ${payment.amount} failed'
                 )
             except:
                 pass

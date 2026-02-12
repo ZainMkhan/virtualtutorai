@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { analyticsAPI, type UserStatsResponse, type ConversationStatsResponse, type RevenueStatsResponse } from '../../../services/api';
 import { BarChart3, TrendingUp, Users, MessageSquare } from 'lucide-react';
 import UserStatsCard from './components/UserStatsCard.tsx';
@@ -18,6 +19,7 @@ interface LoadingState {
 }
 
 const AdminAnalytics: React.FC = () => {
+  const { t } = useTranslation();
   const [loading, setLoading] = useState<LoadingState>({
     userStats: true,
     conversationStats: true,

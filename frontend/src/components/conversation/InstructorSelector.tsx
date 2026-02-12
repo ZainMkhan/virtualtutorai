@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { avatarAPI, type Avatar } from '@/services/api';
 import { Button } from '@/components/ui/button';
 import { Loader, Search } from 'lucide-react';
@@ -15,6 +16,7 @@ const InstructorSelector: React.FC<InstructorSelectorProps> = ({
   onCancel,
   isLoading = false,
 }) => {
+  const { t } = useTranslation();
   const [avatars, setAvatars] = useState<Avatar[]>([]);
   const [filteredAvatars, setFilteredAvatars] = useState<Avatar[]>([]);
   const [loading, setLoading] = useState(true);
@@ -34,11 +36,11 @@ const InstructorSelector: React.FC<InstructorSelectorProps> = ({
           setAvatars(response.data.results);
           setFilteredAvatars(response.data.results);
         } else {
-          setError(response.message || 'Failed to load instructors');
+          setError(response.message || t('conversation.failed_to_load_instructors'));
         }
       } catch (err: any) {
         console.error('Failed to load avatars:', err);
-        setError('Failed to load instructors');
+        setError(t('conversation.failed_to_load_instructors'));
       } finally {
         setLoading(false);
       }
@@ -80,9 +82,9 @@ const InstructorSelector: React.FC<InstructorSelectorProps> = ({
       <div className="bg-white rounded-lg shadow-lg max-w-2xl w-full mx-4 max-h-screen overflow-y-auto">
         {/* Header */}
         <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4">
-          <h2 className="text-2xl font-bold text-gray-900">Select Your Instructor</h2>
+          <h2 className="text-2xl font-bold text-gray-900">{t('conversation.select_instructor')}</h2>
           <p className="text-sm text-gray-600 mt-1">
-            Choose an instructor to chat with, or continue without one
+            {t('conversation.choose_instructor')}
           </p>
         </div>
 
@@ -99,7 +101,7 @@ const InstructorSelector: React.FC<InstructorSelectorProps> = ({
             <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
             <Input
               type="text"
-              placeholder="Search instructors..."
+              placeholder={t('conversation.search_instructors')}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-10"
@@ -114,7 +116,7 @@ const InstructorSelector: React.FC<InstructorSelectorProps> = ({
             </div>
           ) : filteredAvatars.length === 0 ? (
             <div className="text-center py-12">
-              <p className="text-gray-500">No instructors found</p>
+              <p className="text-gray-500">{t('conversation.no_instructors_found')}</p>
             </div>
           ) : (
             /* Avatars Grid */
@@ -172,14 +174,14 @@ const InstructorSelector: React.FC<InstructorSelectorProps> = ({
             onClick={onCancel}
             disabled={isLoading}
           >
-            Cancel
+            {t('conversation.cancel')}
           </Button>
           <Button
             variant="outline"
             onClick={handleNoInstructor}
             disabled={isLoading || loading}
           >
-            Continue Without Instructor
+            {t('conversation.continue_without_instructor')}
           </Button>
           <Button
             onClick={handleContinue}
@@ -189,7 +191,7 @@ const InstructorSelector: React.FC<InstructorSelectorProps> = ({
             {isLoading ? (
               <Loader className="h-4 w-4 animate-spin mr-2" />
             ) : null}
-            Continue
+            {t('conversation.continue')}
           </Button>
         </div>
       </div>

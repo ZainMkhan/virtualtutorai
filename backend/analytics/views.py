@@ -173,18 +173,18 @@ class RevenueStatsAPIView(APIView):
             # Total revenue
             total_revenue = Payment.objects.filter(
                 status='succeeded'
-            ).aggregate(total=Sum('final_amount'))['total'] or 0
+            ).aggregate(total=Sum('amount'))['total'] or 0
             
             # Revenue by period
             revenue_today = Payment.objects.filter(
                 status='succeeded',
                 created_at__date=timezone.now().date()
-            ).aggregate(total=Sum('final_amount'))['total'] or 0
+            ).aggregate(total=Sum('amount'))['total'] or 0
             
             revenue_month = Payment.objects.filter(
                 status='succeeded',
                 created_at__gte=timezone.now() - timedelta(days=30)
-            ).aggregate(total=Sum('final_amount'))['total'] or 0
+            ).aggregate(total=Sum('amount'))['total'] or 0
             
             # Subscription metrics
             active_subscriptions = Subscription.objects.filter(
@@ -199,11 +199,6 @@ class RevenueStatsAPIView(APIView):
                 monthly_revenue=Sum('tier__price')
             )
             
-            # Discount impact
-            total_discounts = Payment.objects.filter(
-                status='succeeded'
-            ).aggregate(total=Sum('discount_amount'))['total'] or 0
-            
             # MRR (Monthly Recurring Revenue)
             mrr = Subscription.objects.filter(
                 status='active'
@@ -215,7 +210,6 @@ class RevenueStatsAPIView(APIView):
                 'revenue_month': float(revenue_month),
                 'active_subscriptions': active_subscriptions,
                 'mrr': float(mrr),
-                'total_discounts': float(total_discounts),
                 'revenue_by_tier': list(revenue_by_tier),
                 'average_transaction': (
                     float(total_revenue / Payment.objects.filter(status='succeeded').count())

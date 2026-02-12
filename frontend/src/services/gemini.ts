@@ -114,7 +114,7 @@ class GeminiService {
     Respond naturally to the user's message. Keep responses concise but informative (2-3 sentences max).`;
 
     try {
-      const model = this.genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+      const model = this.genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
       
       // Build conversation history
       const conversationHistory = messages
@@ -274,7 +274,7 @@ class GeminiService {
     const category = avatarContext?.category || 'general topics';
 
     try {
-      const model = this.genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+      const model = this.genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
       
       // Build conversation history for summarization
       const conversationText = messages

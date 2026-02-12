@@ -11,6 +11,13 @@ class SubscriptionTier(models.Model):
     Admins can create and manage different subscription levels.
     """
     
+    TIER_CHOICES = [
+        ('free', 'Free'),
+        ('basic', 'Basic'),
+        ('pro', 'Pro'),
+        ('enterprise', 'Enterprise'),
+    ]
+    
     BILLING_INTERVAL_CHOICES = [
         ('month', 'Monthly'),
         ('year', 'Yearly'),
@@ -21,6 +28,12 @@ class SubscriptionTier(models.Model):
         default=uuid.uuid4,
         editable=False,
         help_text="Unique identifier for the tier"
+    )
+    
+    tier = models.CharField(
+        max_length=20,
+        choices=TIER_CHOICES,
+        help_text="Subscription tier level: free, basic, pro, enterprise"
     )
     
     name = models.CharField(
@@ -336,18 +349,6 @@ class UsageLimit(models.Model):
     
     # ============ CURRENT USAGE (resets monthly) ============
     
-    conversations_used = models.IntegerField(
-        default=0,
-        validators=[MinValueValidator(0)],
-        help_text="Conversations used this period"
-    )
-    
-    video_minutes_used = models.IntegerField(
-        default=0,
-        validators=[MinValueValidator(0)],
-        help_text="Video minutes used this period"
-    )
-    
     messages_sent = models.IntegerField(
         default=0,
         validators=[MinValueValidator(0)],
@@ -392,20 +393,6 @@ class UsageLimit(models.Model):
     # ============ REMAINING CALCULATIONS ============
     
     @property
-    def conversations_remaining(self):
-        """Get remaining conversations in period"""
-        if self.conversations_limit == 0:  # 0 means unlimited
-            return float('inf')
-        return max(0, self.conversations_limit - self.conversations_used)
-    
-    @property
-    def video_minutes_remaining(self):
-        """Get remaining video minutes in period"""
-        if self.video_minutes_limit == 0:  # 0 means unlimited
-            return float('inf')
-        return max(0, self.video_minutes_limit - self.video_minutes_used)
-    
-    @property
     def messages_remaining(self):
         """Get remaining messages in period"""
         if self.messages_limit == 0:  # 0 means unlimited
@@ -420,20 +407,6 @@ class UsageLimit(models.Model):
         return max(0, self.interactive_minutes_limit - self.interactive_minutes_used)
     
     # ============ PERCENTAGE CALCULATIONS ============
-    
-    @property
-    def conversations_percentage(self):
-        """Percentage of conversations used"""
-        if self.conversations_limit == 0:
-            return 0
-        return (self.conversations_used / self.conversations_limit) * 100
-    
-    @property
-    def video_minutes_percentage(self):
-        """Percentage of video minutes used"""
-        if self.video_minutes_limit == 0:  # unlimited
-            return 0
-        return (self.video_minutes_used / self.video_minutes_limit) * 100
     
     @property
     def messages_percentage(self):
@@ -453,27 +426,14 @@ class UsageLimit(models.Model):
     
     def reset_usage(self):
         """Reset usage counters for new period"""
-        self.conversations_used = 0
-        self.video_minutes_used = 0
         self.messages_sent = 0
         self.interactive_minutes_used = 0
         self.period_start = timezone.now()
         self.period_end = self.subscription.current_period_end
         self.save(update_fields=[
-            'conversations_used', 'video_minutes_used', 
             'messages_sent', 'interactive_minutes_used',
             'period_start', 'period_end'
         ])
-    
-    def increment_conversation(self, amount=1):
-        """Increment conversation counter"""
-        self.conversations_used += amount
-        self.save(update_fields=['conversations_used'])
-    
-    def increment_video_minutes(self, minutes=1):
-        """Increment video minutes counter"""
-        self.video_minutes_used += minutes
-        self.save(update_fields=['video_minutes_used'])
     
     def increment_messages(self, amount=1):
         """Increment messages counter"""
@@ -523,18 +483,6 @@ class UsageLimit(models.Model):
     def get_usage_summary(self):
         """Return complete usage summary for API responses"""
         return {
-            'conversations': {
-                'used': self.conversations_used,
-                'limit': self.conversations_limit,
-                'remaining': self.conversations_remaining,
-                'percentage': round(self.conversations_percentage, 2),
-            },
-            'video_minutes': {
-                'used': self.video_minutes_used,
-                'limit': self.video_minutes_limit,
-                'remaining': self.video_minutes_remaining,
-                'percentage': round(self.video_minutes_percentage, 2),
-            },
             'messages': {
                 'used': self.messages_sent,
                 'limit': self.messages_limit,

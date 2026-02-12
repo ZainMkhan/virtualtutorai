@@ -1,6 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
+import { useTranslation } from 'react-i18next';
 import { Avatar, AvatarFallback } from '../ui/avatar';
 import {
   DropdownMenu,
@@ -19,6 +20,7 @@ interface UserMenuProps {
 const UserMenu: React.FC<UserMenuProps> = ({ userProfile }) => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   const handleLogout = async () => {
     await logout();
@@ -75,16 +77,16 @@ const UserMenu: React.FC<UserMenuProps> = ({ userProfile }) => {
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={() => navigate('/profile')} className="cursor-pointer">
           <User className="mr-2 h-4 w-4" />
-          <span>Profile Management</span>
+          <span>{t('navigation.profile')}</span>
         </DropdownMenuItem>
         <DropdownMenuItem onClick={() => navigate('/settings')} className="cursor-pointer">
           <Settings className="mr-2 h-4 w-4" />
-          <span>Settings</span>
+          <span>{t('navigation.settings')}</span>
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={handleLogout} className="cursor-pointer text-red-600 focus:text-red-600">
           <LogOut className="mr-2 h-4 w-4" />
-          <span>Logout</span>
+          <span>{t('navigation.logout')}</span>
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

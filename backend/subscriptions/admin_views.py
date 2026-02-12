@@ -104,16 +104,20 @@ class AdminAllUsersWithSubscriptionsAPIView(APIView):
                         # Add usage details
                         if hasattr(sub, 'usage_limit'):
                             usage = sub.usage_limit
+                            # Count active conversations
+                            from conversations.models import Conversation
+                            active_conversations = Conversation.objects.filter(
+                                user=sub.user,
+                                is_active=True
+                            ).count()
                             user_data['usage'] = {
                                 'messages_sent': usage.messages_sent,
                                 'messages_limit': usage.messages_limit,
                                 'messages_remaining': usage.messages_remaining,
-                                'conversations_used': usage.conversations_used,
+                                'conversations_active': active_conversations,
                                 'conversations_limit': usage.conversations_limit,
                                 'interactive_minutes_used': usage.interactive_minutes_used,
                                 'interactive_minutes_limit': usage.interactive_minutes_limit,
-                                'video_minutes_used': usage.video_minutes_used,
-                                'video_minutes_limit': usage.video_minutes_limit,
                             }
                     else:
                         user_data['subscription'] = None
@@ -190,9 +194,9 @@ class AdminAllBillingDetailsAPIView(APIView):
             min_amount = request.query_params.get('min_amount')
             max_amount = request.query_params.get('max_amount')
             if min_amount:
-                payments = payments.filter(final_amount__gte=float(min_amount))
+                payments = payments.filter(amount__gte=float(min_amount))
             if max_amount:
-                payments = payments.filter(final_amount__lte=float(max_amount))
+                payments = payments.filter(amount__lte=float(max_amount))
             
             # Pagination
             paginator = AdminPagination()
@@ -205,9 +209,7 @@ class AdminAllBillingDetailsAPIView(APIView):
                         'payment_id': str(payment.id),
                         'user_email': payment.user.email,
                         'user_id': str(payment.user.id),
-                        'original_amount': str(payment.original_amount),
-                        'discount_amount': str(payment.discount_amount),
-                        'final_amount': str(payment.final_amount),
+                        'amount': str(payment.amount),
                         'currency': payment.currency,
                         'status': payment.status,
                         'stripe_payment_intent_id': payment.stripe_payment_intent_id,
@@ -303,9 +305,7 @@ class AdminInvoicesAPIView(APIView):
                         'invoice_number': invoice.invoice_number,
                         'user_email': invoice.user.email,
                         'user_id': str(invoice.user.id),
-                        'original_amount': str(invoice.original_amount),
-                        'discount_amount': str(invoice.discount_amount),
-                        'total_amount': str(invoice.total_amount),
+                        'amount': str(invoice.amount),
                         'currency': invoice.currency,
                         'status': invoice.status,
                         'issue_date': invoice.issue_date,

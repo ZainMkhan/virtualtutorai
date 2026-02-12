@@ -214,7 +214,12 @@ class SubscriptionUsageAPIView(APIView):
             return Response({
                 'success': True,
                 'message': 'Usage statistics retrieved successfully',
-                'tier': subscription.tier.display_name,
+                'tier': {
+                    'id': str(subscription.tier.id),
+                    'tier': subscription.tier.tier,
+                    'name': subscription.tier.name,
+                    'display_name': subscription.tier.display_name,
+                },
                 'data': serializer.data
             })
         except Subscription.DoesNotExist:
@@ -238,7 +243,6 @@ class SubscriptionUpgradeAPIView(APIView):
             required=['tier_id'],
             properties={
                 'tier_id': openapi.Schema(type=openapi.TYPE_STRING, format='uuid', description='Target tier ID'),
-                'discount_code': openapi.Schema(type=openapi.TYPE_STRING, description='Optional discount code'),
             }
         ),
         manual_parameters=[
@@ -268,7 +272,6 @@ class SubscriptionUpgradeAPIView(APIView):
             }, status=status.HTTP_400_BAD_REQUEST)
         
         tier_id = serializer.validated_data['tier_id']
-        discount_code = serializer.validated_data.get('discount_code')
         
         tier = get_object_or_404(SubscriptionTier, id=tier_id, is_active=True)
         
@@ -307,7 +310,6 @@ class SubscriptionUpgradeAPIView(APIView):
                     'billing_interval': tier.billing_interval,
                 },
                 'requires_payment': tier.price > 0,
-                'discount_code': discount_code
             }
         })
 
@@ -538,3 +540,130 @@ class SubscriptionCancelAPIView(APIView):
                 'success': False,
                 'message': 'No active subscription found'
             }, status=status.HTTP_404_NOT_FOUND)
+
+
+class UpdateInteractiveMinutesAPIView(APIView):
+    """
+    Update user's interactive minutes usage.
+    """
+    permission_classes = [IsAuthenticated]
+    
+    @swagger_auto_schema(
+        operation_summary="Update Interactive Minutes Usage",
+        operation_description="Increment user's interactive minutes usage for current billing period",
+        request_body=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            required=['minutes'],
+            properties={
+                'minutes': openapi.Schema(
+                    type=openapi.TYPE_INTEGER,
+                    description='Number of interactive minutes to add (must be positive)'
+                ),
+            }
+        ),
+        manual_parameters=[
+            openapi.Parameter(
+                'Authorization',
+                openapi.IN_HEADER,
+                description="Bearer JWT token",
+                type=openapi.TYPE_STRING,
+                required=True
+            )
+        ],
+        responses={
+            200: openapi.Response(description="Interactive minutes updated successfully"),
+            400: openapi.Response(description="Validation failed or usage limit exceeded"),
+            401: openapi.Response(description="Authentication required"),
+            404: openapi.Response(description="No subscription found")
+        }
+    )
+    def post(self, request):
+        """Update interactive minutes usage"""
+        try:
+            # Validate request data
+            minutes = request.data.get('minutes')
+            
+            if minutes is None:
+                return Response({
+                    'success': False,
+                    'message': 'minutes parameter is required',
+                    'errors': {'minutes': 'This field is required'}
+                }, status=status.HTTP_400_BAD_REQUEST)
+            
+            try:
+                minutes = int(minutes)
+            except (ValueError, TypeError):
+                return Response({
+                    'success': False,
+                    'message': 'Validation failed',
+                    'errors': {'minutes': 'Must be a valid integer'}
+                }, status=status.HTTP_400_BAD_REQUEST)
+            
+            if minutes <= 0:
+                return Response({
+                    'success': False,
+                    'message': 'Validation failed',
+                    'errors': {'minutes': 'Must be a positive number'}
+                }, status=status.HTTP_400_BAD_REQUEST)
+            
+            # Get user's subscription and usage limit
+            subscription = request.user.subscription
+            usage_limit = subscription.usage_limit
+            
+            # Check if usage limit would be exceeded
+            if usage_limit.interactive_minutes_limit > 0:  # 0 means unlimited
+                if usage_limit.interactive_minutes_used + minutes > usage_limit.interactive_minutes_limit:
+                    return Response({
+                        'success': False,
+                        'message': 'Interactive minutes limit would be exceeded',
+                        'data': {
+                            'current_usage': usage_limit.interactive_minutes_used,
+                            'limit': usage_limit.interactive_minutes_limit,
+                            'requested': minutes,
+                            'remaining': usage_limit.interactive_minutes_remaining,
+                        }
+                    }, status=status.HTTP_400_BAD_REQUEST)
+            
+            # Increment interactive minutes
+            usage_limit.increment_interactive_minutes(minutes)
+            
+            # Log the update
+            try:
+                log_admin_action(
+                    request=request,
+                    action='interactive_minutes_updated',
+                    resource_type='usage',
+                    resource_id=str(usage_limit.subscription.id),
+                    description=f'User added {minutes} interactive minutes',
+                    metadata={
+                        'minutes_added': minutes,
+                        'total_used': usage_limit.interactive_minutes_used,
+                        'limit': usage_limit.interactive_minutes_limit,
+                    }
+                )
+            except:
+                pass
+            
+            return Response({
+                'success': True,
+                'message': 'Interactive minutes updated successfully',
+                'data': {
+                    'minutes_added': minutes,
+                    'total_used': usage_limit.interactive_minutes_used,
+                    'limit': usage_limit.interactive_minutes_limit,
+                    'remaining': usage_limit.interactive_minutes_remaining,
+                    'percentage_used': round(usage_limit.interactive_minutes_percentage, 2),
+                }
+            }, status=status.HTTP_200_OK)
+            
+        except Subscription.DoesNotExist:
+            return Response({
+                'success': False,
+                'message': 'No subscription found for user'
+            }, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            return Response({
+                'success': False,
+                'message': 'An error occurred',
+                'errors': {'detail': str(e)}
+            }, status=status.HTTP_400_BAD_REQUEST)

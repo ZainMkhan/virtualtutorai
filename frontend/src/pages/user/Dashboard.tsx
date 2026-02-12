@@ -1,15 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
+import { useTranslation } from 'react-i18next';
 import { userAPI, avatarAPI, type UserProfile, type Avatar } from '../../services/api';
 import UserMenu from '../../components/user/UserMenu';
+import LanguageSwitcher from '../../components/shared/LanguageSwitcher';
 import DashboardSidebar from '../../components/user/DashboardSidebar';
+import { UsageDashboard } from '../../components/shared/LimitWarnings';
 import { Bot, Tag, ArrowRight, Sparkles, Crown } from 'lucide-react';
 import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 
 const Dashboard: React.FC = () => {
-  const { user, currentSubscription } = useAuth();
+  const { user, currentSubscription, usageData } = useAuth();
   const navigate = useNavigate();
+  const { t } = useTranslation();
   
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
@@ -33,7 +37,7 @@ const Dashboard: React.FC = () => {
           setUserProfile(response.data);
         }
       } catch (error: any) {
-        setError('Failed to load profile data');
+        setError(t('errors.something_went_wrong'));
         console.error('Profile fetch error:', error);
       } finally {
         setLoading(false);
@@ -53,10 +57,10 @@ const Dashboard: React.FC = () => {
       if (response.success) {
         setAvatars(response.data.results);
       } else {
-        setAvatarsError(response.message || 'Failed to load avatars');
+        setAvatarsError(response.message || t('errors.failed_to_load_avatars'));
       }
     } catch (error: any) {
-      setAvatarsError('Failed to load avatars');
+      setAvatarsError(t('errors.failed_to_load_avatars'));
       console.error('Avatars fetch error:', error);
     } finally {
       setAvatarsLoading(false);
@@ -80,7 +84,7 @@ const Dashboard: React.FC = () => {
       <div className="min-h-screen w-full flex items-center justify-center bg-gray-50">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading dashboard...</p>
+          <p className="text-gray-600">{t('common.loading')}</p>
         </div>
       </div>
     );
@@ -105,6 +109,7 @@ const Dashboard: React.FC = () => {
                   <span className="text-gray-600 text-sm hidden md:inline">
                     Welcome, <span className="font-medium">{userProfile?.full_name || user?.email}</span>
                   </span>
+                  <LanguageSwitcher />
                   <UserMenu userProfile={userProfile} />
                 </div>
               </div>
@@ -118,7 +123,7 @@ const Dashboard: React.FC = () => {
               {/* Error Alert */}
               {error && (
                 <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-8">
-                  <p className="font-medium">Error</p>
+                  <p className="font-medium">{t('common.error')}</p>
                   <p className="text-sm">{error}</p>
                 </div>
               )}
@@ -129,7 +134,7 @@ const Dashboard: React.FC = () => {
                 <div className="bg-white rounded-lg shadow-sm p-6 border border-gray-200 hover:shadow-md transition-shadow">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-gray-600 text-sm font-medium">Available Avatars</p>
+                      <p className="text-gray-600 text-sm font-medium">{t('dashboard.available_avatars')}</p>
                       <p className="text-3xl font-bold text-gray-900 mt-2">{avatars.length}</p>
                     </div>
                     <div className="bg-blue-100 rounded-lg p-3">
@@ -142,7 +147,7 @@ const Dashboard: React.FC = () => {
                 <div className="bg-white rounded-lg shadow-sm p-6 border border-gray-200 hover:shadow-md transition-shadow">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-gray-600 text-sm font-medium">Active Tutors</p>
+                      <p className="text-gray-600 text-sm font-medium">{t('dashboard.active_tutors')}</p>
                       <p className="text-3xl font-bold text-gray-900 mt-2">
                         {avatars.filter(a => a.is_active).length}
                       </p>
@@ -157,11 +162,11 @@ const Dashboard: React.FC = () => {
                 <div className="bg-white rounded-lg shadow-sm p-6 border border-gray-200 hover:shadow-md transition-shadow cursor-pointer" onClick={() => navigate('/subscription')}>
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-gray-600 text-sm font-medium">Subscription</p>
+                      <p className="text-gray-600 text-sm font-medium">{t('navigation.subscription')}</p>
                       <p className="text-3xl font-bold text-gray-900 mt-2 capitalize">
-                        {currentSubscription?.tierName || 'Free'}
+                        {currentSubscription?.tierName || t('common.free')}
                       </p>
-                      <p className="text-xs text-green-600 mt-1 font-medium">Active</p>
+                      <p className="text-xs text-green-600 mt-1 font-medium">{t('avatars.active')}</p>
                     </div>
                     <div className="bg-purple-100 rounded-lg p-3">
                       <Crown className="h-6 w-6 text-purple-600" />
@@ -170,18 +175,32 @@ const Dashboard: React.FC = () => {
                 </div>
               </div>
 
+              {/* Usage Dashboard */}
+              {usageData && (
+                <div className="mt-8">
+                  <UsageDashboard
+                    messagesSent={usageData.messages_sent}
+                    messagesLimit={usageData.messages_limit}
+                    conversationsUsed={usageData.conversations_used || 0}
+                    conversationsLimit={usageData.conversations_limit || 0}
+                    interactiveMinutesUsed={usageData.interactive_minutes_used}
+                    interactiveMinutesLimit={usageData.interactive_minutes_limit}
+                  />
+                </div>
+              )}
+
               {/* Avatars Section */}
-              <div id="avatars" className="bg-white rounded-lg shadow-sm border border-gray-200">
+              <div id="avatars" className="bg-white rounded-lg shadow-sm border border-gray-200 mt-8">
             {/* Section Header */}
             <div className="border-b border-gray-200 p-6">
               <div className="flex items-center justify-between">
                 <div>
                   <h3 className="text-xl font-semibold text-gray-900 flex items-center">
                     <Bot className="h-6 w-6 mr-3 text-blue-600" />
-                    Interactive AI Tutors
+                    {t('avatars.title')}
                   </h3>
                   <p className="text-gray-600 text-sm mt-1">
-                    Click on any avatar to start an interactive conversation session
+                    {t('dashboard.click_to_interact')}
                   </p>
                 </div>
               </div>
@@ -191,7 +210,7 @@ const Dashboard: React.FC = () => {
             <div className="p-6">
               {avatarsError && (
                 <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6">
-                  <p className="font-medium">Failed to load avatars</p>
+                  <p className="font-medium">{t('avatars.failed_to_load')}</p>
                   <p className="text-sm">{avatarsError}</p>
                 </div>
               )}
@@ -199,16 +218,16 @@ const Dashboard: React.FC = () => {
               {avatarsLoading ? (
                 <div className="flex items-center justify-center py-16">
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-                  <span className="ml-3 text-gray-600 font-medium">Loading avatars...</span>
+                  <span className="ml-3 text-gray-600 font-medium">{t('avatars.loading_avatars')}</span>
                 </div>
               ) : avatars.length === 0 ? (
                 <div className="text-center py-16">
                   <Bot className="mx-auto h-16 w-16 text-gray-300 mb-4" />
                   <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                    No avatars available yet
+                    {t('dashboard.no_avatars')}
                   </h3>
                   <p className="text-gray-600">
-                    AI tutors are being set up. Please check back soon!
+                    {t('dashboard.avatars_setup')}
                   </p>
                 </div>
               ) : (
@@ -265,7 +284,7 @@ const Dashboard: React.FC = () => {
                                 ? 'bg-green-100 text-green-700' 
                                 : 'bg-gray-100 text-gray-700'
                             }`}>
-                              {avatar.is_active ? '● Active' : '○ Inactive'}
+                              {avatar.is_active ? `● ${t('avatars.active')}` : `○ ${t('avatars.inactive')}`}
                             </span>
                             
                             <button

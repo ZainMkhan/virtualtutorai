@@ -6,6 +6,26 @@ export const fetchActivityLogs = async (filters: ActivityLogsFilterParams) => {
   return response;
 };
 
+export const formatTimestamp = (timestamp: string): string => {
+  try {
+    const date = new Date(timestamp);
+    if (isNaN(date.getTime())) {
+      return 'Invalid Date';
+    }
+    return date.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: true,
+    });
+  } catch (error) {
+    return 'Invalid Date';
+  }
+};
+
 export const getActionBadgeColor = (action: string): string => {
   const colors: { [key: string]: string } = {
     login: 'bg-blue-100 text-blue-800',
@@ -35,7 +55,7 @@ export const exportLogsToCSV = (logs: ActivityLog[]) => {
   try {
     const headers = ['Timestamp', 'User Email', 'Action', 'Resource Type', 'Resource ID', 'Status', 'Description'];
     const rows = logs.map(log => [
-      log.timestamp,
+      formatTimestamp(log.created_at),
       log.user_email,
       log.action,
       log.resource_type,

@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import Logo from '@/components/shared/Logo';
 import ConversationList from './ConversationList';
 
@@ -13,6 +14,7 @@ const ConversationSidebar: React.FC<ConversationSidebarProps> = ({
   refreshTrigger,
   subscriptionTier,
 }) => {
+  const { t } = useTranslation();
   return (
     <div className="w-64 border-r border-gray-200 flex flex-col">
       {/* Virtual Tutor Branding */}
@@ -29,7 +31,7 @@ const ConversationSidebar: React.FC<ConversationSidebarProps> = ({
         <div className="relative">
           <input
             type="text"
-            placeholder="Search conversations..."
+            placeholder={t('conversation.search_conversations')}
             className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
           <svg className="absolute right-3 top-2.5 h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">

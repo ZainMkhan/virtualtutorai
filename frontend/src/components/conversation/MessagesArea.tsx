@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import type { Message } from '@/services/api';
 import MessageBubble from './MessageBubble';
 
@@ -23,6 +24,7 @@ const MessagesArea: React.FC<MessagesAreaProps> = ({
   messagesContainerRef,
   messagesEndRef,
 }) => {
+  const { t } = useTranslation();
   return (
     <div 
       ref={messagesContainerRef}
@@ -44,8 +46,8 @@ const MessagesArea: React.FC<MessagesAreaProps> = ({
                   } as any}
                 />
               </div>
-              <p className="text-gray-900 text-lg font-semibold mb-2">Start a Conversation</p>
-              <p className="text-gray-500 text-sm">Send a message to begin chatting</p>
+              <p className="text-gray-900 text-lg font-semibold mb-2">{t('conversation.start_a_conversation')}</p>
+              <p className="text-gray-500 text-sm">{t('conversation.send_message_to_begin')}</p>
             </div>
           </div>
         ) : (
@@ -68,7 +70,7 @@ const MessagesArea: React.FC<MessagesAreaProps> = ({
                   </div>
                 </div>
                 <div className="flex flex-col">
-                  <span className="text-xs font-semibold text-gray-700 px-1 mb-1">Instructor</span>
+                  <span className="text-xs font-semibold text-gray-700 px-1 mb-1">{t('conversation.instructor')}</span>
                   <div className="flex items-center gap-1 px-4 py-2.5 bg-gray-200 text-gray-900 rounded-xl rounded-bl-none">
                     <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce"></div>
                     <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce delay-100"></div>

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useSignup } from '../../../hooks';
 import SignupSideHeader from './SignupSideHeader';
 import SignupProgress from './SignupProgress';
@@ -17,6 +18,7 @@ const Signup: React.FC = () => {
   const [step, setStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [localError, setLocalError] = useState('');
+  const { t } = useTranslation();
   const [formData, setFormData] = useState<SignupFormData>({
     username: '',
     email: '',

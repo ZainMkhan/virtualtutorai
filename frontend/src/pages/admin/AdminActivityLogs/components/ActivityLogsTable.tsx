@@ -1,6 +1,6 @@
 import React from 'react';
 import type { ActivityLog } from '../types';
-import { getActionBadgeColor, getStatusBadgeColor } from '../api';
+import { getActionBadgeColor, getStatusBadgeColor, formatTimestamp } from '../api';
 
 interface ActivityLogsTableProps {
   logs: ActivityLog[];
@@ -37,7 +37,7 @@ const ActivityLogsTable: React.FC<ActivityLogsTableProps> = ({ logs }) => {
             <tr key={log.id} className="hover:bg-gray-50">
               <td className="px-6 py-4 whitespace-nowrap">
                 <div className="text-sm text-gray-900">
-                  {new Date(log.timestamp).toLocaleString()}
+                  {formatTimestamp(log.created_at)}
                 </div>
               </td>
               <td className="px-6 py-4 whitespace-nowrap">

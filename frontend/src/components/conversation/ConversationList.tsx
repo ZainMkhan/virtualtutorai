@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { conversationAPI } from '@/services/api';
 import type { Conversation } from '@/services/api';
 import { Loader, Trash2 } from 'lucide-react';
@@ -19,6 +20,7 @@ const ConversationList: React.FC<ConversationListProps> = ({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   useEffect(() => {
     const loadConversations = async () => {
@@ -55,7 +57,7 @@ const ConversationList: React.FC<ConversationListProps> = ({
   const handleDeleteConversation = async (conversationId: string, e: React.MouseEvent) => {
     e.stopPropagation();
 
-    if (!window.confirm('Are you sure you want to delete this conversation?')) {
+    if (!window.confirm(t('conversation.delete_conversation_confirm'))) {
       return;
     }
 
@@ -126,15 +128,15 @@ const ConversationList: React.FC<ConversationListProps> = ({
 
         {!hasConversations ? (
           <div className="flex flex-col items-center justify-center h-full text-center p-4">
-            <p className="text-sm text-gray-600">No conversations yet</p>
-            <p className="text-xs text-gray-500 mt-1">Start a new chat to begin</p>
+            <p className="text-sm text-gray-600">{t('conversation.no_conversations_yet')}</p>
+            <p className="text-xs text-gray-500 mt-1">{t('conversation.start_new_chat_to_begin')}</p>
           </div>
         ) : (
           <div className="space-y-4">
             {/* Today Section */}
             {grouped.today.length > 0 && (
               <div>
-                <h3 className="text-xs font-semibold text-gray-500 uppercase px-2 mb-2">Today</h3>
+                <h3 className="text-xs font-semibold text-gray-500 uppercase px-2 mb-2">{t('conversation.today')}</h3>
                 <div className="space-y-1">
                   {grouped.today.map((convo) => (
                     <button
@@ -170,7 +172,7 @@ const ConversationList: React.FC<ConversationListProps> = ({
             {grouped.yesterday.length > 0 && (
               <div>
                 <h3 className="text-xs font-semibold text-gray-500 uppercase px-2 mb-2">
-                  Yesterday
+                  {t('conversation.yesterday')}
                 </h3>
                 <div className="space-y-1">
                   {grouped.yesterday.map((convo) => (
@@ -206,7 +208,7 @@ const ConversationList: React.FC<ConversationListProps> = ({
             {/* Older Section */}
             {grouped.older.length > 0 && (
               <div>
-                <h3 className="text-xs font-semibold text-gray-500 uppercase px-2 mb-2">Older</h3>
+                <h3 className="text-xs font-semibold text-gray-500 uppercase px-2 mb-2">{t('conversation.older')}</h3>
                 <div className="space-y-1">
                   {grouped.older.map((convo) => (
                     <button

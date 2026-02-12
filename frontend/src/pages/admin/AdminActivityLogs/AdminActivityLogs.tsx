@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { LoadingState, ActivityLogsContainer } from './components';
 import { fetchActivityLogs, exportLogsToCSV } from './api';
 import { INITIAL_FILTERS, type ActivityLog, type ActivityLogsFilterParams } from './types';
 
 const AdminActivityLogs: React.FC = () => {
+  const { t } = useTranslation();
   const [logs, setLogs] = useState<ActivityLog[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

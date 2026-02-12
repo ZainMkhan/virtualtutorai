@@ -18,7 +18,7 @@ Usage:
         action='payment_succeeded',
         resource_type='payment',
         resource_id=str(payment.id),
-        metadata={'amount': payment.final_amount, 'tier': str(payment.tier.id)}
+        metadata={'amount': payment.amount, 'tier': str(payment.tier.id)}
     )
 """
 
@@ -179,7 +179,7 @@ def log_payment_initiated(request, payment, description="Payment initiated"):
         resource_id=str(payment.id),
         description=description,
         metadata={
-            'amount': str(payment.final_amount),
+            'amount': str(payment.amount),
             'currency': 'usd'
         }
     )
@@ -194,7 +194,7 @@ def log_payment_succeeded(request, payment, description="Payment succeeded"):
         resource_id=str(payment.id),
         description=description,
         metadata={
-            'amount': str(payment.final_amount),
+            'amount': str(payment.amount),
             'currency': 'usd',
             'tier': payment.subscription.tier.display_name if hasattr(payment, 'subscription') else None
         }
@@ -212,7 +212,7 @@ def log_payment_failed(request, payment, error_msg=None, description="Payment fa
         status='failure',
         error_message=error_msg,
         metadata={
-            'amount': str(payment.final_amount),
+            'amount': str(payment.amount),
             'currency': 'usd'
         }
     )

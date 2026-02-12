@@ -6,6 +6,7 @@ export { default as Dashboard } from './user/Dashboard';
 export { default as Profile } from './user/Profile';
 export { default as Settings } from './user/Settings';
 export { default as Subscription } from './user/Subscription';
+export { default as AvatarsBrowse } from './user/AvatarsBrowse';
 
 // Admin pages
 export { default as AdminDashboard } from './admin/AdminDashboard';
