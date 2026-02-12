@@ -17,8 +17,13 @@ interface CurrentSubscription {
 interface UsageData {
   messages_sent: number;
   messages_limit: number;
+  messages_remaining: number;
   interactive_minutes_used: number;
   interactive_minutes_limit: number;
+  interactive_minutes_remaining: number;
+  conversations_used?: number;
+  conversations_limit?: number;
+  conversations_remaining?: number;
 }
 
 interface AuthContextType {
@@ -88,8 +93,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           const usageData: UsageData = {
             messages_sent: Number(response.data.usage.messages_sent || 0),
             messages_limit: Number(response.data.usage.messages_limit || 0),
+            messages_remaining: Number(response.data.usage.messages_remaining || 0),
             interactive_minutes_used: Number(response.data.usage.interactive_minutes_used || 0),
             interactive_minutes_limit: Number(response.data.usage.interactive_minutes_limit || 0),
+            interactive_minutes_remaining: Number(response.data.usage.interactive_minutes_remaining || 0),
+            conversations_used: 0, // Will be fetched from API
+            conversations_limit: response.data.tier?.conversations_per_month || 0,
+            conversations_remaining: 0,
           };
           console.log('✅ Setting usage data from subscription:', usageData);
           setUsageData(usageData);
@@ -140,19 +150,22 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   // Fetch usage data
   const fetchUsageData = async () => {
     try {
-      const response = await subscriptionAPI.getUsageStatistics();
-      console.log('✅ Usage API Response:', response);
-      console.log('✅ Response data fields:', Object.keys(response?.data || {}));
+      const response = await subscriptionAPI.getCurrentSubscription();
+      console.log('✅ Subscription API Response:', response);
       
-      if (response.success && response.data) {
-        console.log('✅ Usage data fetched successfully');
+      if (response.success && response.data && response.data.usage) {
+        console.log('✅ Usage data fetched successfully from subscription');
         
-        // Map all possible field variations
         const usageData: UsageData = {
-          messages_sent: Number(response.data.messages_sent ?? response.data.sent ?? response.data.used ?? 0) || 0,
-          messages_limit: Number(response.data.messages_limit ?? response.data.limit ?? 500) || 0,
-          interactive_minutes_used: Number(response.data.interactive_minutes_used ?? response.data.minutes_used ?? 0) || 0,
-          interactive_minutes_limit: Number(response.data.interactive_minutes_limit ?? response.data.minutes_limit ?? 1) || 0,
+          messages_sent: Number(response.data.usage.messages_sent || 0),
+          messages_limit: Number(response.data.usage.messages_limit || 0),
+          messages_remaining: Number(response.data.usage.messages_remaining || 0),
+          interactive_minutes_used: Number(response.data.usage.interactive_minutes_used || 0),
+          interactive_minutes_limit: Number(response.data.usage.interactive_minutes_limit || 0),
+          interactive_minutes_remaining: Number(response.data.usage.interactive_minutes_remaining || 0),
+          conversations_used: 0, // Will be fetched from API
+          conversations_limit: response.data.tier?.conversations_per_month || 0,
+          conversations_remaining: 0,
         };
         console.log('✅ Mapped usage data:', usageData);
         setUsageData(usageData);

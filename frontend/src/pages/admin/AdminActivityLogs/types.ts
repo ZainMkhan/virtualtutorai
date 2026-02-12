@@ -1,8 +1,9 @@
 export type ActivityLog = {
   id: string;
-  timestamp: string;
+  created_at: string;
   user_email: string;
   action: string;
+  action_display?: string;
   resource_type: string;
   resource_id?: string;
   status: string;

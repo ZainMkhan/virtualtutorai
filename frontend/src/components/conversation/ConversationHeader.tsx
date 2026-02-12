@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, Play } from 'lucide-react';
 import { geminiService } from '@/services/gemini';
@@ -19,6 +20,7 @@ const ConversationHeader: React.FC<ConversationHeaderProps> = ({
   conversation,
   messages = [],
 }) => {
+  const { t } = useTranslation();
   const [showInteractiveSession, setShowInteractiveSession] = useState(false);
   const [conversationSummary, setConversationSummary] = useState<string | null>(null);
   const [summaryLoading, setSummaryLoading] = useState(false);
@@ -47,13 +49,13 @@ const ConversationHeader: React.FC<ConversationHeaderProps> = ({
     console.log('Start Interactive Session clicked. Avatar:', { name, embedUrl, hasAvatar, avatarId: avatarData?.id });
     
     if (!avatarData) {
-      alert('No instructor selected for this conversation. Please create a new conversation with an instructor.');
+      alert(t('conversation.no_instructor'));
       return;
     }
     
     if (!embedUrl) {
       console.warn('Avatar data present but embed_url missing:', avatarData);
-      alert('Instructor selected but video setup incomplete. Please try refreshing the page or creating a new conversation.');
+      alert(t('conversation.video_setup_incomplete'));
       return;
     }
     
@@ -153,17 +155,17 @@ const ConversationHeader: React.FC<ConversationHeaderProps> = ({
                 ? 'bg-purple-600 hover:bg-purple-700 text-white'
                 : 'bg-gray-400 cursor-not-allowed text-white'
             }`}
-            title={hasAvatar ? 'Start video session with instructor' : 'No instructor selected'}
+            title={hasAvatar ? t('conversation.start_video_session') : t('conversation.no_instructor_selected')}
           >
             <Play className="h-4 w-4" />
-            Video Chat
+            {t('conversation.video_chat')}
           </Button>
           <Button
             type="button"
             onClick={onNewChat}
             className="bg-blue-600 hover:bg-blue-700 text-white rounded-lg px-4 py-2 text-sm flex items-center gap-2"
           >
-            ✨ New Chat
+            ✨ {t('conversation.new_chat')}
           </Button>
         </div>
       </div>

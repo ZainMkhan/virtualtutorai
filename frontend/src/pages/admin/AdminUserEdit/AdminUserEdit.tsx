@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import {
   AdminHeader,
   UserHeader,
@@ -14,6 +15,7 @@ import type { UserProfile } from '../../../services/api';
 
 const AdminUserEdit: React.FC = () => {
   const { userId } = useParams<{ userId: string }>();
+  const { t } = useTranslation();
   const navigate = useNavigate();
   
   const [user, setUser] = useState<UserProfile | null>(null);

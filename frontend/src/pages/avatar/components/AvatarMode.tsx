@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Bot } from 'lucide-react';
 import type { Avatar } from '../../../services/api';
+import { subscriptionAPI } from '../../../services/api';
 
 interface AvatarModeProps {
   avatar: Avatar;
@@ -8,28 +9,107 @@ interface AvatarModeProps {
 }
 
 const HEYGEN_HOST = "https://labs.heygen.com";
+const LIVEAVATAR_HOST = "https://embed.liveavatar.com";
 
 const AvatarMode: React.FC<AvatarModeProps> = ({ avatar, isActive }) => {
   const embedContainerRef = useRef<HTMLDivElement | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const hasLoadedEmbed = useRef(false);
+  const sessionStartTimeRef = useRef<number | null>(null);
+  const sessionTrackerRef = useRef<NodeJS.Timeout | null>(null);
+  const sessionActiveRef = useRef(false);
 
   useEffect(() => {
     if (isActive && !hasLoadedEmbed.current && avatar.embed_url && embedContainerRef.current) {
       loadAvatarEmbed();
       hasLoadedEmbed.current = true;
+      startSession();
     }
   }, [isActive, avatar.embed_url]);
 
+  const startSession = () => {
+    console.log('[Session] Starting avatar interaction session');
+    sessionStartTimeRef.current = Date.now();
+    sessionActiveRef.current = true;
+  };
+
+  const endSession = async () => {
+    if (!sessionActiveRef.current || !sessionStartTimeRef.current) {
+      return;
+    }
+
+    sessionActiveRef.current = false;
+    const sessionDurationMs = Date.now() - sessionStartTimeRef.current;
+    const sessionDurationMinutes = Math.ceil(sessionDurationMs / 60000); // Round up to nearest minute
+
+    console.log(`[Session] Ending avatar interaction session. Duration: ${sessionDurationMinutes} minutes`);
+
+    try {
+      const result = await subscriptionAPI.updateInteractiveMinutes(sessionDurationMinutes);
+      console.log('[Session] Usage tracked successfully:', result);
+    } catch (error) {
+      console.error('[Session] Failed to track usage:', error);
+    }
+
+    // Clear session data
+    sessionStartTimeRef.current = null;
+    if (sessionTrackerRef.current) {
+      clearInterval(sessionTrackerRef.current);
+      sessionTrackerRef.current = null;
+    }
+  };
+
   useEffect(() => {
-    // Cleanup on unmount
+    // Cleanup on unmount or when isActive becomes false
     return () => {
-      if (embedContainerRef.current) {
+      if (embedContainerRef.current && !isActive) {
         embedContainerRef.current.innerHTML = '';
+      }
+      // End session when component is unmounted or deactivated
+      if (!isActive && sessionActiveRef.current) {
+        endSession();
       }
       hasLoadedEmbed.current = false;
     };
   }, [isActive]);
+
+  // Listen for page unload and browser back/forward
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (sessionActiveRef.current) {
+        console.log('[Session] Page unloading - ending session');
+        // Try to send session end synchronously if possible
+        if (sessionStartTimeRef.current) {
+          const sessionDurationMs = Date.now() - sessionStartTimeRef.current;
+          const sessionDurationMinutes = Math.ceil(sessionDurationMs / 60000);
+          
+          // Use sendBeacon for more reliable delivery on page unload
+          try {
+            const token = localStorage.getItem('access_token');
+            const beacon = new Blob(
+              [JSON.stringify({ minutes: sessionDurationMinutes })],
+              { type: 'application/json' }
+            );
+            navigator.sendBeacon(
+              `${import.meta.env.VITE_API_URL || 'http://localhost:8000/api'}/subscriptions/usage/update-interactive-minutes/`,
+              beacon
+            );
+          } catch (error) {
+            console.error('[Session] Failed to send beacon:', error);
+          }
+        }
+      }
+    };
+
+    // Add listeners for various navigation scenarios
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    window.addEventListener('pagehide', handleBeforeUnload);
+
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      window.removeEventListener('pagehide', handleBeforeUnload);
+    };
+  }, []);
 
   const extractHeyGenUrl = (embedUrl: string): string | null => {
     // Try to extract the share URL from the embed script
@@ -47,15 +127,118 @@ const AvatarMode: React.FC<AvatarModeProps> = ({ avatar, isActive }) => {
     return null;
   };
 
+  const extractLiveAvatarUrl = (embedUrl: string): string | null => {
+    // Extract URL from iframe src attribute
+    const srcMatch = embedUrl.match(/src=["']([^"']+)["']/);
+    if (srcMatch) {
+      return srcMatch[1];
+    }
+    
+    // If it's already a direct URL
+    if (embedUrl.includes('embed.liveavatar.com')) {
+      return embedUrl;
+    }
+    
+    return null;
+  };
+
+  const getEmbedProvider = (embedUrl: string): 'heygen' | 'liveavatar' | null => {
+    if (!embedUrl) return null;
+    if (embedUrl.includes('heygen.com') || embedUrl.includes('streaming-embed')) {
+      return 'heygen';
+    }
+    if (embedUrl.includes('liveavatar.com')) {
+      return 'liveavatar';
+    }
+    return null;
+  };
+
   const loadAvatarEmbed = () => {
     if (!embedContainerRef.current || !avatar.embed_url) return;
 
     const targetContainer = embedContainerRef.current;
+    const provider = getEmbedProvider(avatar.embed_url);
     
     // Clear any previous instances
     targetContainer.innerHTML = '';
     setIsLoading(true);
 
+    if (provider === 'liveavatar') {
+      loadLiveAvatarEmbed(targetContainer);
+    } else if (provider === 'heygen') {
+      loadHeyGenEmbed(targetContainer);
+    } else {
+      console.error('Unsupported embed provider');
+      setIsLoading(false);
+    }
+  };
+
+  const loadLiveAvatarEmbed = (targetContainer: HTMLDivElement) => {
+    const liveAvatarUrl = extractLiveAvatarUrl(avatar.embed_url);
+    
+    if (!liveAvatarUrl) {
+      console.error('Could not extract LiveAvatar URL from embed script');
+      setIsLoading(false);
+      return;
+    }
+
+    const wrapDiv = document.createElement("div");
+    wrapDiv.id = "liveavatar-embed";
+    wrapDiv.style.cssText = "width: 100%; height: 100%; position: absolute; top: 0; left: 0; right: 0; bottom: 0;";
+
+    const stylesheet = document.createElement("style");
+    stylesheet.innerHTML = `
+      #liveavatar-embed {
+        position: absolute !important;
+        top: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        bottom: 0 !important;
+        width: 100% !important;
+        height: 100% !important;
+        display: flex !important;
+        justify-content: center !important;
+        align-items: center !important;
+        overflow: hidden !important;
+        border-radius: 1rem !important;
+        border: none !important;
+        background: black;
+        opacity: 0;
+        visibility: hidden;
+        transition: opacity 0.3s ease-in-out;
+      }
+
+      #liveavatar-embed.show {
+        opacity: 1 !important;
+        visibility: visible !important;
+      }
+
+      #liveavatar-embed iframe {
+        width: 100% !important;
+        height: 100% !important;
+        border: 0 !important;
+        border-radius: 1rem !important;
+      }
+    `;
+
+    const iframe = document.createElement("iframe");
+    iframe.title = "LiveAvatar Embed";
+    iframe.allow = "microphone";
+    iframe.src = liveAvatarUrl;
+    iframe.style.cssText = "width: 100%; height: 100%; border: 0; border-radius: 1rem;";
+
+    // Add a small delay to ensure iframe is loaded before showing
+    setTimeout(() => {
+      wrapDiv.classList.add("show");
+      setIsLoading(false);
+    }, 500);
+
+    wrapDiv.appendChild(stylesheet);
+    wrapDiv.appendChild(iframe);
+    targetContainer.appendChild(wrapDiv);
+  };
+
+  const loadHeyGenEmbed = (targetContainer: HTMLDivElement) => {
     // Extract the HeyGen URL from the embed script
     const heygenUrl = extractHeyGenUrl(avatar.embed_url);
     
@@ -210,6 +393,12 @@ const AvatarMode: React.FC<AvatarModeProps> = ({ avatar, isActive }) => {
           case "init":
             wrapDiv.classList.add("show");
             setIsLoading(false);
+            break;
+          case "end":
+          case "close":
+          case "error":
+            console.log(`[Session] HeyGen session ended with action: ${event.data.action}`);
+            endSession();
             break;
         }
       }

@@ -283,22 +283,38 @@ export function parseMultipleEmbeds(embedScripts: string[]): EmbedParseResult[] 
  * @returns True if from trusted source
  */
 export function isValidEmbedSource(embedScript: string): boolean {
-  const trustedDomains = [
+  const trustedHeyGenDomains = [
     'labs.heygen.com',
     'app.heygen.com',
     'heygen.com',
     'api.heygen.com'
   ];
+
+  const trustedLiveAvatarDomains = [
+    'embed.liveavatar.com',
+    'liveavatar.com',
+    'api.liveavatar.com'
+  ];
   
-  // Check for trusted domains in the script
-  const hasTrustedDomain = trustedDomains.some(domain => 
-    embedScript.toLowerCase().includes(domain.toLowerCase())
+  const normalizedScript = embedScript.toLowerCase();
+  
+  // Check for HeyGen
+  const hasHeyGenDomain = trustedHeyGenDomains.some(domain => 
+    normalizedScript.includes(domain.toLowerCase())
   );
   
-  // Check for script structure that looks like HeyGen
-  const hasValidStructure = /function\s*\(\s*window\s*\)/.test(embedScript) &&
-                           /streaming-embed/.test(embedScript) &&
-                           /share=/.test(embedScript);
+  const hasHeyGenStructure = /function\s*\(\s*window\s*\)/.test(embedScript) &&
+                             /streaming-embed/.test(embedScript) &&
+                             /share=/.test(embedScript);
   
-  return hasTrustedDomain && hasValidStructure;
+  // Check for LiveAvatar
+  const hasLiveAvatarDomain = trustedLiveAvatarDomains.some(domain =>
+    normalizedScript.includes(domain.toLowerCase())
+  );
+  
+  const hasLiveAvatarStructure = /<iframe/.test(embedScript) &&
+                                  normalizedScript.includes('embed.liveavatar.com');
+  
+  // Return true if it matches either provider
+  return (hasHeyGenDomain && hasHeyGenStructure) || (hasLiveAvatarDomain && hasLiveAvatarStructure);
 }

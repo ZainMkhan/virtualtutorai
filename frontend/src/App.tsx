@@ -17,6 +17,7 @@ import AdminUserCreate from './pages/admin/AdminUserCreate/AdminUserCreate';
 import AdminAvatarCreate from './pages/admin/AdminAvatarCreate/AdminAvatarCreate';
 import AdminAvatarEdit from './pages/admin/AdminAvatarEdit/AdminAvatarEdit';
 import AvatarInteraction from './pages/avatar/AvatarInteraction';
+import AvatarsBrowse from './pages/user/AvatarsBrowse';
 import Conversation from './pages/Conversation';
 import './App.css';
 
@@ -68,6 +69,14 @@ const AppRoutes: React.FC = () => {
         element={
           <PrivateRoute isAuthenticated={isAuthenticated}>
             <Subscription />
+          </PrivateRoute>
+        } 
+      />
+      <Route 
+        path="/avatars" 
+        element={
+          <PrivateRoute isAuthenticated={isAuthenticated}>
+            <AvatarsBrowse />
           </PrivateRoute>
         } 
       />

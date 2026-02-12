@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { Transaction, RefundRequest } from '../../../services/api';
 import { SummaryCards } from './components/SummaryCards';
 import { TableHeader } from './components/TableHeader';
@@ -20,6 +21,7 @@ const DEFAULT_FILTERS: PaymentFilters = {
 };
 
 const AdminPayments: React.FC = () => {
+  const { t } = useTranslation();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

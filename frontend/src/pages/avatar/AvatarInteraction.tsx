@@ -1,29 +1,47 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Bot, Loader2 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
+import { ArrowLeft, Bot, Loader2, AlertCircle } from 'lucide-react';
 import { avatarAPI, type Avatar } from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
+import { canUseInteractiveAvatar, formatLimitWarning } from '../../utils/limitChecker';
 import Logo from '../../components/shared/Logo';
 import UserMenu from '../../components/user/UserMenu';
-import ModeToggle from './components/ModeToggle';
 import AvatarMode from './components/AvatarMode';
-import ChatMode from './components/ChatMode';
 
 const AvatarInteraction: React.FC = () => {
   const { avatarId } = useParams<{ avatarId: string }>();
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { t } = useTranslation();
+  const { user, usageData } = useAuth();
   
   const [avatar, setAvatar] = useState<Avatar | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [currentMode, setCurrentMode] = useState<'avatar' | 'chat'>('avatar');
+  const [interactiveMinutesWarning, setInteractiveMinutesWarning] = useState<string | null>(null);
 
   useEffect(() => {
     if (avatarId) {
       fetchAvatar(avatarId);
     }
   }, [avatarId]);
+
+  // Check interactive minutes limit on mount and when usageData changes
+  useEffect(() => {
+    if (usageData) {
+      const limitCheck = canUseInteractiveAvatar(
+        usageData.interactive_minutes_used,
+        usageData.interactive_minutes_limit
+      );
+
+      if (!limitCheck.canProceed) {
+        setInteractiveMinutesWarning(formatLimitWarning(limitCheck));
+        setError('You have reached your interactive avatar limit for this month.');
+      } else if (limitCheck.percentageUsed >= 70) {
+        setInteractiveMinutesWarning(formatLimitWarning(limitCheck));
+      }
+    }
+  }, [usageData]);
 
   const fetchAvatar = async (id: string) => {
     try {
@@ -44,15 +62,7 @@ const AvatarInteraction: React.FC = () => {
     }
   };
 
-  const handleModeChange = (mode: 'avatar' | 'chat') => {
-    setCurrentMode(mode);
-    if (mode === 'chat') {
-      const existingEmbed = document.getElementById('heygen-streaming-embed');
-      if (existingEmbed) {
-        existingEmbed.remove();
-      }
-    }
-  };
+
 
   if (loading) {
     return (
@@ -70,8 +80,12 @@ const AvatarInteraction: React.FC = () => {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center max-w-md">
           <Bot className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">Avatar Not Found</h2>
-          <p className="text-gray-600 mb-6">{error || 'The requested avatar could not be found.'}</p>
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">
+            {error?.includes('reached your interactive avatar limit') ? 'Limit Reached' : 'Avatar Not Found'}
+          </h2>
+          <p className="text-gray-600 mb-6">
+            {error || 'The requested avatar could not be found.'}
+          </p>
           <button
             onClick={() => navigate('/dashboard')}
             className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
@@ -109,12 +123,6 @@ const AvatarInteraction: React.FC = () => {
             </div>
 
             <div className="flex items-center space-x-4">
-              <ModeToggle 
-                currentMode={currentMode} 
-                onModeChange={handleModeChange}
-                disabled={loading}
-              />
-              
               <div className="flex items-center space-x-4">
                 <span className="text-gray-700 text-sm">
                   Welcome, {user?.email}
@@ -128,12 +136,18 @@ const AvatarInteraction: React.FC = () => {
 
       <main className="w-full h-full py-6 px-4 sm:px-6 lg:px-8">
         <div className="w-full">
+          {/* Warning Banner */}
+          {interactiveMinutesWarning && (
+            <div className="mb-4 bg-yellow-50 border border-yellow-200 rounded-lg p-4 flex gap-3">
+              <AlertCircle className="h-5 w-5 text-yellow-600 flex-shrink-0 mt-0.5" />
+              <div className="flex-1">
+                <p className="text-sm font-medium text-yellow-800">{interactiveMinutesWarning}</p>
+              </div>
+            </div>
+          )}
+
           <div className="bg-white rounded-lg shadow min-h-[calc(100vh-8rem)]">
-            {currentMode === 'avatar' ? (
-              <AvatarMode avatar={avatar} isActive={true} />
-            ) : (
-              <ChatMode avatar={avatar} isActive={true} />
-            )}
+            <AvatarMode avatar={avatar} isActive={true} />
           </div>
         </div>
       </main>

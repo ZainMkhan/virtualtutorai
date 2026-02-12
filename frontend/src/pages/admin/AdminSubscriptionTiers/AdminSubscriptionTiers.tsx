@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { adminAPI, type SubscriptionTierDetail, type CreateSubscriptionTierRequest } from '../../../services/api';
 import { Edit, Trash2, Plus, X } from 'lucide-react';
 
@@ -10,6 +11,7 @@ interface TierFormData extends CreateSubscriptionTierRequest {
 }
 
 const AdminSubscriptionTiers: React.FC = () => {
+  const { t } = useTranslation();
   const [tiers, setTiers] = useState<SubscriptionTierDetail[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

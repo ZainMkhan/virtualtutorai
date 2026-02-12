@@ -115,15 +115,41 @@ export const AvatarFormFields: React.FC<AvatarFormFieldsProps> = ({
         <label htmlFor="preview_image" className="block text-sm font-medium text-gray-700 mb-2">
           Preview Image URL
         </label>
-        <input
-          type="url"
-          id="preview_image"
-          name="preview_image"
-          value={formData.preview_image}
-          onChange={onInputChange}
-          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-          placeholder="https://..."
-        />
+        <div className="space-y-3">
+          <input
+            type="url"
+            id="preview_image"
+            name="preview_image"
+            value={formData.preview_image}
+            onChange={onInputChange}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            placeholder="https://files2.heygen.ai/avatar/v3/{AVATAR_ID}/preview_target.webp"
+          />
+          <p className="text-xs text-gray-500 space-y-1">
+            <div>
+              For <strong>LiveAvatar</strong>: If the image doesn't auto-load, you can manually construct it:
+            </div>
+            <div className="font-mono text-xs bg-gray-100 p-2 rounded mt-1">
+              https://files2.heygen.ai/avatar/v3/{'[HEYGEN_AVATAR_ID]'}/preview_target.webp
+            </div>
+            <div>
+              Example: <code className="bg-gray-100 px-1">3b4e464bf15f4194b082be0e631354c6_46860</code>
+            </div>
+          </p>
+          {formData.preview_image && (
+            <div className="mt-3 p-3 bg-gray-100 rounded-md">
+              <p className="text-xs text-gray-600 mb-2">Preview:</p>
+              <img 
+                src={formData.preview_image} 
+                alt="Preview" 
+                className="w-24 h-24 object-cover rounded border border-gray-300"
+                onError={(e) => {
+                  e.currentTarget.style.display = 'none';
+                }}
+              />
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Settings */}

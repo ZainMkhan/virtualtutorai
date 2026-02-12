@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import AdminHeader from './components/AdminHeader';
 import PageHeader from './components/PageHeader';
 import UserForm from './components/UserForm';
@@ -9,6 +10,7 @@ import { submitUserCreation, resetFormData } from './api';
 
 const AdminUserCreate: React.FC = () => {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);

@@ -1,9 +1,12 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { ArrowRight, Brain, MessageSquare, Zap, Users, TrendingUp, CheckCircle } from 'lucide-react';
+import LanguageSwitcher from '@/components/shared/LanguageSwitcher';
 
 const Landing: React.FC = () => {
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   const features = [
     {
@@ -78,29 +81,30 @@ const Landing: React.FC = () => {
             {/* Menu Items */}
             <div className="hidden md:flex gap-8">
               <a href="#features" className="text-gray-600 hover:text-blue-600 transition font-medium">
-                Features
+                {t('pages.landing.features')}
               </a>
               <a href="#how-it-works" className="text-gray-600 hover:text-blue-600 transition font-medium">
-                How It Works
+                {t('pages.landing.how_it_works')}
               </a>
               <a href="#" className="text-gray-600 hover:text-blue-600 transition font-medium">
-                About
+                {t('pages.landing.about')}
               </a>
             </div>
 
             {/* CTA Buttons */}
-            <div className="flex gap-2 sm:gap-4">
+            <div className="flex gap-2 sm:gap-4 items-center">
+              <LanguageSwitcher />
               <button
                 onClick={() => navigate('/login')}
                 className="px-4 sm:px-6 py-2 sm:py-2.5 text-blue-600 font-medium border border-blue-600 rounded-lg hover:bg-blue-50 transition"
               >
-                Login
+                {t('pages.landing.login')}
               </button>
               <button
                 onClick={() => navigate('/signup')}
-                className="px-4 sm:px-6 py-2 sm:py-2.5 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition hidden sm:block"
+                className="px-4 sm:px-6 py-2 sm:py-2.5 text-white font-medium bg-blue-600 rounded-lg hover:bg-blue-700 transition"
               >
-                Get Started
+                {t('pages.landing.get_started')}
               </button>
             </div>
           </div>

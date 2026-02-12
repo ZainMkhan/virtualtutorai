@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { AdminUserSubscription } from '../../../services/api';
 import {
   SummaryCards,
@@ -14,6 +15,7 @@ import { fetchUsersWithSubscriptions, exportUsersToCSV } from './api';
 import type { SubscriptionFilters } from './types';
 
 const AdminUserSubscriptions: React.FC = () => {
+  const { t } = useTranslation();
   const [users, setUsers] = useState<AdminUserSubscription[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
